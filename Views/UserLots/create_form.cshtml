@@ -1,0 +1,30 @@
+<form class="form"
+    action="/lots/my/create" method="post"
+>
+    <label for="name">Название</label>
+    <div class="form-field">
+        <input id="name" name="name" type="text" required autofocus />
+    </div>
+
+    <label for="price">Цена</label>
+    <div class="form-field">
+        <input id="price" name="price" type="number" required />
+    </div>
+
+    <label for="end_time">Дата окончания</label>
+    <div class="form-field">
+        <input id="end_time" name="end_time" type="datetime-local" required />
+    </div>
+
+    <label for="images">Картинки</label>
+    <div class="form-field">
+        <input id="images" name="images[]" type="file" multiple accept="image/*">
+    </div>
+
+    <div id="error">
+        @await Html.PartialAsync("errors")
+    </div>
+
+    <button class="form-submit" type="submit">Создать</button>
+    <button class="form-reset" type="reset">Очистить</button>
+</form>

@@ -21,6 +21,9 @@
                     Аккаунт
                 </a>
             </li>
+            <li class="header-user-login">
+                @user.login
+            </li>
             <li class="header-link hover-shadow">
                 <a href="/auth/logout?saved_location=@(current_path)"
                     hx-post="/auth/logout?saved_location=@(current_path)"

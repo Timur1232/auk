@@ -1,0 +1,14 @@
+@model App.Models.Lot
+
+<h1>@Model.title</h1>
+
+<p>
+    Текущая цена: <span class="lot-price">@Model.current_price</span>
+</p>
+<p>
+    Начальная цена: <span class="lot-price">@Model.initial_price</span>
+</p>
+
+<p>
+    Закрытие лота в: <span>@Model.end_time</span>
+</p>

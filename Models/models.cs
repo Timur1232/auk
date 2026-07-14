@@ -25,16 +25,15 @@ public class Lot
 
     public uint tag_id {get; set;}
 
-    [Required] public string name {get; set;} = null!;
+    [Required] public string title {get; set;} = null!;
                public int count {get; set;} = 1;
     [Required] public decimal initial_price {get; set;}
                public decimal current_price {get; set;}
     [Required] public DateTimeOffset end_time {get; set;}
 
-    [Required] public string title {get; set;} = null!;
 
     public record CreateRequest(
-        string name,
+        string title,
         int count,
         decimal initial_price,
         DateTime end_time,
@@ -44,7 +43,7 @@ public class Lot
     public static Lot From(CreateRequest data, string user_login)
     {
         var lot = new Lot {
-            name = data.name,
+            title = data.title,
             user_login = user_login,
             tag_id = data.tag_id,
             count = data.count,

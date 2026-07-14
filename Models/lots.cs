@@ -5,6 +5,12 @@ public class LotsModel(AuctionDbContext db)
 {
     public const int DEFAULT_PAGE_SIZE = 15;
 
+    public async Task<Lot?> GetById(uint id)
+    {
+        var lot = await db.lots.FindAsync(id);
+        return lot;
+    }
+
     public IQueryable<Lot> GetPage(uint? tag_id, int page, int page_size = DEFAULT_PAGE_SIZE) {
         var lots_query = tag_id switch {
             null => db.lots,

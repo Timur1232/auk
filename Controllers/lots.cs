@@ -5,21 +5,48 @@ using App.Extentions;
 using App.Attributes;
 namespace App.Controllers;
 
+
 [ApiController]
 [Route("lots")]
 [AddViewData, HtmxServe]
-public class LotsController(AuctionDbContext db) : Controller
+[GetUser]
+public class PublicLotsController(AuctionDbContext db) : Controller
 {
     public LotsModel model = new(db);
 
-    [Authorize, HttpGet("my"), GetUserStrict]
+    [HttpGet("{id}")]
+    public async Task<IActionResult> LotDetails([FromRoute] uint id)
+    {
+        var lot = await model.GetById(id);
+        if (lot == null) {
+            return NotFound();
+        }
+        return View("lot_details", lot);
+    }
+}
+
+[ApiController]
+[Route("lots/my")]
+[AddViewData, HtmxServe]
+[Authorize, GetUserStrict]
+public class UserLotsController(AuctionDbContext db) : Controller
+{
+    public LotsModel model = new(db);
+
+    [HttpGet("create")]
+    public async Task<IActionResult> CreateForm()
+    {
+        return View("create_form");
+    }
+
+    [HttpGet]
     public async Task<IActionResult> GetUserLots([FromQuery] int? page, [FromQuery] int? page_size, [FromQuery] uint? tag_id)
     {
         var lots = model.GetPage(tag_id, page ?? 0, page_size ?? LotsModel.DEFAULT_PAGE_SIZE);
         return Ok(lots);
     }
 
-    [HttpGet("{id}"), GetUser]
+    [HttpGet("{id}")]
     public async Task<IActionResult> GetLot(uint id)
     {
         var lot = await db.lots.FindAsync(id);
@@ -29,7 +56,7 @@ public class LotsController(AuctionDbContext db) : Controller
         return Ok(lot);
     }
 
-    [Authorize, HttpPost, GetUserStrict]
+    [HttpPost]
     public async Task<IActionResult> Create([FromForm] Lot.CreateRequest req)
     {
         var user = HttpContext.GetUser()!;
@@ -41,7 +68,7 @@ public class LotsController(AuctionDbContext db) : Controller
         return Ok(entry.Entity);
     }
 
-    [Authorize, HttpDelete("{id}"), GetUserStrict]
+    [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteByid(uint id)
     {
         var (deleted_lot, err) = await model.DeleteById(id);
@@ -52,7 +79,7 @@ public class LotsController(AuctionDbContext db) : Controller
         return Ok(deleted_lot);
     }
 
-    [Authorize, HttpPatch("{id}"), GetUserStrict]
+    [HttpPatch("{id}")]
     public async Task<IActionResult> UpdateById(uint id, [FromForm] Lot.CreateRequest req)
     {
         var (updated_lot, err) = await model.UpdateById(id, req);

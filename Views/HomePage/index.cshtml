@@ -5,13 +5,17 @@
 }
 
 <aside class="lot-filters">
+    <p>Категории</p>
     <div class="lot-tags">
-        @foreach (var tag in @Model.tags) {
+        @foreach (var (i, tag) in @Model.tags.Index()) {
             <a href="/?tag_id=@(tag.id)"
                 hx-get="/?tag_id=@(tag.id)"
                 hx-target="main"
                 hx-push-url="true"
             >@tag.name</a>
+            @if (i < @Model.tags.Count-1) {
+                <span>|</span>
+            }
         }
     </div>
 </aside>

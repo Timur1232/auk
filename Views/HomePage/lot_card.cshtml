@@ -3,8 +3,9 @@
 <div class="lot-card hover-shadow"
     hx-get="/lots/@Model.id"
     hx-target="main"
+    hx-push-url="true"
 >
     <img src="@Model.image_path" alt="" />
     <p>@Model.title</p>
-    <span class="lot-card-price">@Model.price ₽</span>
+    <span class="lot-price">@Model.price</span>
 </div>

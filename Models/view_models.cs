@@ -11,5 +11,5 @@ public class HomePageModel
     }
 
     public IEnumerable<LotCard> cards = null!;
-    public IEnumerable<Tag> tags = null!;
+    public List<Tag> tags = null!;
 }

@@ -337,6 +337,12 @@ header {
     align-self: flex-end;
     margin-right: 5vh;
 }
+.header-user-login {
+    display: flex;
+    justify-items: center;
+    align-items: center;
+    margin-left: 25px;
+}
 
 /* ===============================[Cards]============================= */
 
@@ -372,8 +378,13 @@ header {
     border-style: solid;
     cursor: pointer;
 }
-.lot-card-price {
+.lot-price {
     color: var(--color-accent);
     text-align: right;
     font-size: 1.4em;
+}
+.lot-price::after {
+    content: " ₽";
+    color: inherit;
+    font-size: inherit;
 }
