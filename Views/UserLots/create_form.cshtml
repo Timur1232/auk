@@ -1,6 +1,7 @@
-<script src="/js/ultra.js"></script>
-<form class="form"
-    action="/lots/my/create-test" method="post"
+@model App.Models.CreateFormData;
+
+<form class="form form-narrow"
+    action="/lots/my/create" method="post"
     enctype="multipart/form-data"
 >
     <label for="name">Название</label>
@@ -18,6 +19,16 @@
         <input id="count" name="count" type="number" step="1" value="1" min="1"/>
     </div>
 
+    <label for="tag">Категория</label>
+    <div class="form-field">
+        <select name="tag" id="tag">
+            <option value="" selected>Выберите</option>
+            @foreach(var tag in @Model.tags) {
+                <option value="@tag.id">@tag.name</option>
+            }
+        </select>
+    </div>
+
     <label for="end_time">Дата окончания</label>
     <div class="form-field">
         <input id="end_time" name="end_time" type="datetime-local" required />
@@ -26,24 +37,28 @@
     <label for="thumbnail">Обложка</label>
     <div class="form-field">
         <input id="thumbnail-input" name="thumbnail" type="file" accept="image/*" />
-        <div id="thumbnail-container"></div>
+        <div id="thumbnail-container" class="file-loader"></div>
         <script src="/js/thumbnail_load.js"></script>
     </div>
 
     <div class="file-load-toolbar">
         <label for="images">Фото товара</label>
-        <input id="files-input" name="images" type="file" multiple accept="image/*" hidden />
-
         <button type="button" class="form-button" id="add-files">Добавить файлы</button>
         <button type="button" class="form-reset" id="clear-files">Очистить файлы</button>
+        <div class="form-field file-loader">
+            <input id="files-input" name="images" type="file" multiple accept="image/*" hidden />
 
-        <div id="file-container" data-state="files"></div>
-        <script src="/js/files_load_toolbar.js"></script>
+
+            <div id="file-container" data-state="files" class="image-cards-container"></div>
+            <script src="/js/files_load_toolbar.js"></script>
+        </div>
     </div>
 
     <div id="error">
         @await Html.PartialAsync("errors")
     </div>
+
+    <hr>
 
     <button class="form-submit" type="submit">Создать</button>
     <button class="form-reset" type="reset">Очистить</button>

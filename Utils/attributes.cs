@@ -109,6 +109,7 @@ public class AddViewData : ActionFilterAttribute
     {
         if (context.Controller is Controller c) {
             c.ViewData.SetCurrentPath(c.Request.Path.ToString());
+            c.ViewData["page"] = c.Request.Query["page"].FirstOrDefault();
         }
     }
 }

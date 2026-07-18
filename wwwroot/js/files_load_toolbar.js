@@ -34,8 +34,12 @@
                     } else {
                         child = t.span('🗋').$style('fontSize', '40px');
                     }
-                    return t.div(child).$class('preview');
+                    return t.div(
+                        child,
+                    ).$class('preview');
                 },
+                t.div(item.file.name).$class('file-name'),
+                t.div(format_file_size(item.file.size)).$class('file-size'),
                 t.button('×')
                     .$class('remove-btn')
                     .$attr('aria-label', 'Удалить файл')
@@ -43,7 +47,7 @@
                         const id = item.id;
                         remove_file_by_id(id);
                     }),
-            ).$class('card');
+            ).$class('image-card');
 
             el.$append(card);
         }

@@ -13,7 +13,7 @@ public class User
     public record RegisterRequest(string login, string? email, string password = "", string password_confirm = "", string? last_saved_location = null);
 
     public record Dto(string login, string? email);
-    public Dto Res() => new Dto(login, email);
+    public Dto ToDto() => new Dto(login, email);
 }
 
 public class Lot
@@ -35,9 +35,10 @@ public class Lot
     public record CreateRequest(
         string title,
         int count,
-        decimal initial_price,
+        decimal price,
         DateTime end_time,
-        uint tag_id
+        uint tag_id,
+        IFormFileCollection images
     );
 
     public static Lot From(CreateRequest data, string user_login)
@@ -45,10 +46,10 @@ public class Lot
         var lot = new Lot {
             title = data.title,
             user_login = user_login,
-            tag_id = data.tag_id,
+            // tag_id = data.tag_id,
             count = data.count,
-            initial_price = data.initial_price,
-            current_price = data.initial_price,
+            initial_price = data.price,
+            current_price = data.price,
             end_time = data.end_time,
         };
         return lot;

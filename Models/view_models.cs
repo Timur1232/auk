@@ -13,3 +13,9 @@ public class HomePageModel
     public IEnumerable<LotCard> cards = null!;
     public List<Tag> tags = null!;
 }
+
+public class CreateFormData
+{
+    public List<Tag> tags = new();
+    public Lot? current_lot = null;
+}

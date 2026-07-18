@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using App.Models;
 using App.Extentions;
@@ -33,12 +34,6 @@ public class UserLotsController(AuctionDbContext db) : Controller
 {
     public LotsModel model = new(db);
 
-    [HttpGet("create")]
-    public async Task<IActionResult> CreateForm()
-    {
-        return View("create_form");
-    }
-
     [HttpGet]
     public async Task<IActionResult> GetUserLots([FromQuery] int? page, [FromQuery] int? page_size, [FromQuery] uint? tag_id)
     {
@@ -56,7 +51,24 @@ public class UserLotsController(AuctionDbContext db) : Controller
         return Ok(lot);
     }
 
-    [HttpPost]
+    [HttpGet("create")]
+    public async Task<IActionResult> CreateForm()
+    {
+        var tags = await db.tags.ToListAsync();
+        return View("create_form", new CreateFormData{ tags = tags });
+    }
+
+    [HttpPost("create-test")]
+    public async Task<IActionResult> CreateTest([FromForm] IFormFileCollection images)
+    {
+        var sb = new System.Text.StringBuilder();
+        foreach (var image in images) {
+            sb.Append($"<p>{image.FileName}</p>");
+        }
+        return Content($"<p>Count: {images.Count()}</p>{sb.ToString()}", "text/html");
+    }
+
+    [HttpPost("create")]
     public async Task<IActionResult> Create([FromForm] Lot.CreateRequest req)
     {
         var user = HttpContext.GetUser()!;

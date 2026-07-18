@@ -9,7 +9,7 @@ namespace App.Controllers;
 [ApiController]
 [Route("user")]
 [Authorize]
-[GetUserStrict]
+[GetUserStrict, AddViewData, HtmxServe]
 public class UserController(
         AuctionDbContext db,
         PasswordHasher ph
@@ -19,7 +19,7 @@ public class UserController(
     public async Task<IActionResult> UserInfo()
     {
         var user = HttpContext.GetUser()!;
-        return Ok(user.Res());
+        return View("user_info", user.ToDto());
     }
 
     [HttpGet("lots")]
@@ -29,12 +29,18 @@ public class UserController(
         return Ok(db.lots.Where(l => l.user_login == user.login));
     }
 
+    [HttpGet("password_change")]
+    public async Task<IActionResult> ChangePasswordForm()
+    {
+        return View("change_password_form");
+    }
+
     [HttpPatch("password_change")]
     public async Task<IActionResult> ChangePassword([FromForm] string old_password, [FromForm] string new_password)
     {
         var user = HttpContext.GetUser()!;
         if (ph.Varify(old_password, user.password_hash)) {
-            return Unauthorized("Incorrect password");
+            return View("change_password_form", "Неправильный пароль.");
         }
 
         var new_hash = ph.Hash(new_password);
@@ -42,6 +48,6 @@ public class UserController(
         db.Update(user);
         await db.SaveChangesAsync();
 
-        return Ok(user.Res());
+        return Redirect("/user");
     }
 }

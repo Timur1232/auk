@@ -73,6 +73,7 @@ body {
     color: var(--color-text);
 }
 
+.line-clamp,
 p {
     overflow: hidden;
     display: -webkit-box;
@@ -105,7 +106,10 @@ a.link-decor:hover::before {
 }
 
 hr {
-    color: var(--color-secondary);
+    display: block;
+    height: 1px;
+    border: 0;
+    border-top: 1px dashed var(--color-secondary);
 }
 
 .hover-shadow,
@@ -177,8 +181,8 @@ hr {
 }
 .form label {
     display: block;
-    margin-top: 12px;
-    margin-bottom: 4px;
+    padding-top: 6px;
+    padding-bottom: 8px;
     font-weight: normal;
 }
 .form input,
@@ -186,7 +190,7 @@ hr {
 .form textarea {
     width: 100%;
     padding: 4px;
-    margin-top: 5px;
+    margin-bottom: 10px;
     border: 1px solid var(--color-secondary);
     box-sizing: border-box;
     font-size: inherit;
@@ -216,15 +220,30 @@ hr {
     position: absolute;
     left: -0.75em;
     top: 50%;
-    transform: translateY(-0.25em);
+    transform: translateY(-0.5em);
     color: var(--color-accent);
     pointer-events: none;
 }
+.file-loader {
+    padding: 10px;
+    margin-bottom: 15px;
+
+    border-width: 1px;
+    border-style: dotted;
+    border-color: var(--color-secondary);
+}
+#thumbnail-container:not(.file-loader) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+}
 .form-submit,
 .form-button,
+.button,
 .form-reset {
-    margin-top: 20px;
-    margin-bottom: 20px;
+    margin-top: 10px;
+    margin-bottom: 10px;
     padding: 10px 24px;
     border: 1px solid var(--color-secondary);
     font-weight: bold;
@@ -238,6 +257,7 @@ hr {
     color: var(--color-black);
 }
 .form-submit:hover,
+.button:hover,
 .form-button:hover {
     background: var(--color-accent);
     color: var(--color-black);
@@ -389,4 +409,76 @@ header {
     content: " ₽";
     color: inherit;
     font-size: inherit;
+}
+
+.content-container {
+    max-width: 60vh;
+    margin: auto;
+}
+.center-content-v {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.center-content-h {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.image-cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+
+    padding: 5px;
+    gap: 10px;
+}
+.image-card {
+    position: relative;
+    max-width: 250px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.image-card .preview {
+    width: 100%;
+    aspect-ratio: 1/1;
+    overflow: hidden;
+}
+.image-card .preview img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    display: block;
+}
+.image-card .file-name {
+    padding: 10px;
+    text-align: center;
+    width: 100%;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+.image-card .file-size {
+    color: var(--color-text2);
+}
+.image-card .remove-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-accent2);
+    color: var(--color-text);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    backdrop-filter: blur(2px);
 }

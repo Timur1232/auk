@@ -5,7 +5,7 @@
     --color-primary: #181818;
     --color-secondary: #383838;
     --color-text: var(--color-white);
-    --color-text2: var(--color-secondary);
+    --color-text2: color-mix(in srgb, var(--color-text), rgba(0, 0, 0, 0.5));
     --color-accent: #DD700B;
     --color-accent2: #DD200B;
 

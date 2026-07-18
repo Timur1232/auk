@@ -1,4 +1,9 @@
 @model App.Models.Lot
+@{
+    var saved_page = (string?)ViewData["page"] ?? "0";
+}
+
+<a href="/?page=@saved_page">Вернуться</a>
 
 <h1>@Model.title</h1>
 

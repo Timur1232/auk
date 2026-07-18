@@ -1,7 +1,10 @@
 @model App.Models.HomePageModel.LotCard;
+@{
+    var current_page = (string?)ViewData["page"] ?? "0";
+}
 
 <div class="lot-card hover-shadow"
-    hx-get="/lots/@Model.id"
+    hx-get="/lots/@Model.id?page=@current_page"
     hx-target="main"
     hx-push-url="true"
 >
