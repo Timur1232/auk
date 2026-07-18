@@ -44,7 +44,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 return Task.CompletedTask;
             },
             OnChallenge = c => {
-                c.Response.Redirect("/auth/login");
+                var req_path = Uri.EscapeDataString(c.Request.Path.ToString());
+                c.Response.Redirect($"/auth/login?saved_location={req_path}");
                 c.HandleResponse();
                 return Task.CompletedTask;
             }

@@ -1,9 +1,11 @@
+<script src="/js/ultra.js"></script>
 <form class="form"
-    action="/lots/my/create" method="post"
+    action="/lots/my/create-test" method="post"
+    enctype="multipart/form-data"
 >
     <label for="name">Название</label>
     <div class="form-field">
-        <input id="name" name="name" type="text" required autofocus />
+        <input id="title" name="title" type="text" required autofocus />
     </div>
 
     <label for="price">Цена</label>
@@ -11,14 +13,32 @@
         <input id="price" name="price" type="number" required />
     </div>
 
+    <label for="count">Количество</label>
+    <div class="form-field">
+        <input id="count" name="count" type="number" step="1" value="1" min="1"/>
+    </div>
+
     <label for="end_time">Дата окончания</label>
     <div class="form-field">
         <input id="end_time" name="end_time" type="datetime-local" required />
     </div>
 
-    <label for="images">Картинки</label>
+    <label for="thumbnail">Обложка</label>
     <div class="form-field">
-        <input id="images" name="images[]" type="file" multiple accept="image/*">
+        <input id="thumbnail-input" name="thumbnail" type="file" accept="image/*" />
+        <div id="thumbnail-container"></div>
+        <script src="/js/thumbnail_load.js"></script>
+    </div>
+
+    <div class="file-load-toolbar">
+        <label for="images">Фото товара</label>
+        <input id="files-input" name="images" type="file" multiple accept="image/*" hidden />
+
+        <button type="button" class="form-button" id="add-files">Добавить файлы</button>
+        <button type="button" class="form-reset" id="clear-files">Очистить файлы</button>
+
+        <div id="file-container" data-state="files"></div>
+        <script src="/js/files_load_toolbar.js"></script>
     </div>
 
     <div id="error">

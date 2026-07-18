@@ -5,8 +5,8 @@
 
     let files_state = new ultra.State([], 'files', {
         auto_notify: false,
-        render_callback: render,
-        after_callback: touch_input_tag
+        update_callback: update,
+        after_callback: touch_input_tag,
     });
     let id_counter = 0;
 
@@ -17,7 +17,7 @@
         }
     }
 
-    function render(el, files) {
+    function update(el, files) {
         el.$clear();
 
         if (files.length === 0) {
@@ -80,9 +80,13 @@
         files_state.notify();
     }
 
-    const file_input = ultra.by_id('images');
+    const file_input = ultra.by_id('files-input');
     ultra.from_dom(file_input.closest('form.form')).$on_submit(() => {
-        file_input.value = files_state.val.map(o => o.file);
+        const dt = new DataTransfer();
+        for (const { file } of files_state.val) {
+            dt.items.add(file);
+        }
+        file_input.files = dt.files;
     });
 
     ultra.by_id('add-files').$on_click(() => {

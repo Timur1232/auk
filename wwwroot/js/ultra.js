@@ -203,13 +203,15 @@ const ultra = (function() {
     class State {
         #val = '';
         #subs = [];
+        #binds = [];
         #name = '';
         auto_notify = true;
+        auto_bind = true;
         update_callback = null;
         after_callback = null;
         before_callback = null;
 
-        constructor(initial_state, name, { auto_notify = true, update_callback = null, after_callback = null, before_callback = null }) {
+        constructor(initial_state, name, { auto_notify = true, update_callback = null, after_callback = null, before_callback = null, auto_bind = true } = {}) {
             this.#val = initial_state;
             if (update_callback) {
                 this.update_callback = update_callback;
@@ -220,6 +222,7 @@ const ultra = (function() {
             this.before_callback = before_callback;
             this.#name = name;
             this.auto_notify = auto_notify;
+            this.auto_bind = auto_bind;
             this.resubscribe_all();
             if (this.auto_notify) this.notify();
         }
@@ -243,14 +246,15 @@ const ultra = (function() {
             if (element.dataset.state === this.#name) this.subscribe1(element);
             const children = element.querySelectorAll(`[data-state="${this.#name}"]`);
             for (const child of children) {
-                this.subscribe1(child, update_callback);
+                this.subscribe1(child, { update_callback: update_callback });
             }
         }
 
-        subscribe1(element, update_callback = null) {
+        subscribe1(element, { update_callback = null, additional = {} } = {}) {
             this.#subs.push({
                 element: from_dom(element),
                 update: update_callback,
+                ...additional,
             });
         }
 
@@ -259,22 +263,17 @@ const ultra = (function() {
             this.#subs.splice(index, 1);
         }
 
-        input_event_func() {
+        input_event_func(prop = 'value') {
             return (e) => {
                 if (e.target.type === 'number') {
-                    this.val = Number(e.target.value);
+                    this.val = Number(e.target[prop]);
                 } else {
-                    this.val = e.target.value;
+                    this.val = e.target[prop];
                 }
             };
         }
 
         unsubscribe_all() {
-            for (const sub of this.#subs) {
-                if (sub.dataset && sub.dataset.bind === this.#name) {
-                    sub.removeEventListener('input', this.input_event_func());
-                }
-            }
             this.#subs = [];
         }
 
@@ -284,22 +283,61 @@ const ultra = (function() {
             for (const el of new_subs_els) {
                 this.subscribe(el);
             }
-            this.bind_all(parent);
         }
 
         bind_all(parent = document) {
-            const elements = parent.querySelectorAll(`input[data-bind="${this.#name}"]`);
-            for (const e of elements) {
-                e.addEventListener('input', this.input_event_func());
-                this.subscribe1(e, (el, state) => el.value = state);
+            const elements = parent.querySelectorAll(`input[data-bind="${this.#name}"], input[data-bind^="${this.#name}:"], input[data-bind^="${this.#name}."]`);
+            for (const el of elements) {
+                this.bind(el);
             }
+        }
+
+        unbind_all() {
+            // TODO: memory leak
+            // for (const bind of this.#binds) {
+            //     for (const e of bind.bind_events) {
+            //         bind.removeEventListener(e, this.input_event_func(bind.prop));
+            //     }
+            // }
+            this.#binds = [];
+        }
+
+        bind(element, { update_callback = null } = {}) {
+            let events = null;
+            if (element.dataset.bind.includes(':')) {
+                events = element.dataset.bind
+                    .split(':')[1]
+                    .trim()
+                    .split(' ')
+                    .filter(s => s !== '')
+                    .map(s => s.trim());
+            } else {
+                events = ['input'];
+            }
+            let prop = 'value';
+            if (element.dataset.bind.includes('.')) {
+                prop = element.dataset.bind.split(':')[0].split('.')[1];
+            }
+            for (const e of events) {
+                element.addEventListener(e, this.input_event_func(prop));
+            }
+            if (!update_callback) update_callback = (el, state) => { el[prop] = state }
+            this.#binds.push({
+                element: element,
+                update: update_callback,
+                bind_events: events,
+                prop: prop,
+            });
         }
 
         notify() {
             if (this.before_callback) this.before_callback(this.#val);
+            for (const bind of this.#binds) {
+                bind.update(bind.element, this.#val);
+            }
             for (const sub of this.#subs) {
                 if (sub.update) {
-                    sub.update(sub.element, this.#val);
+                    sub.update(sub.element, this.#val, sub.additional);
                 } else {
                     this.update_callback(sub.element, this.#val);
                 }

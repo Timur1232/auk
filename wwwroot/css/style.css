@@ -221,6 +221,7 @@ hr {
     pointer-events: none;
 }
 .form-submit,
+.form-button,
 .form-reset {
     margin-top: 20px;
     margin-bottom: 20px;
@@ -236,7 +237,8 @@ hr {
     background: var(--color-accent2);
     color: var(--color-black);
 }
-.form-submit:hover {
+.form-submit:hover,
+.form-button:hover {
     background: var(--color-accent);
     color: var(--color-black);
 }
