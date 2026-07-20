@@ -25,5 +25,35 @@ public static class MyExtentions
 
         public string GetSavedLocation() => Uri.UnescapeDataString((string?)view_data["saved_location"] ?? "");
         public void SaveLocation(string url) => view_data["saved_location"] = Uri.EscapeDataString(url);
+
+        public void SetUser(User user) => view_data["user"] = user;
+        public User? GetUser() => view_data["user"] as User;
     }
 }
+
+public static class EnumExt
+{
+    extension (PaymentMethod p) {
+        public string GetDescription()
+        {
+            return p switch {
+            PaymentMethod.None      => "Не указано",
+            PaymentMethod.OnMeeting => "При встрече",
+            PaymentMethod.ViaBank   => "На карту",
+            _ => G.Unreachable<string>(nameof(PaymentMethod)),
+            };
+        }
+    }
+
+    extension (DeliveryPayment d) {
+        public string GetDescription()
+        {
+            return d switch {
+            DeliveryPayment.PaidBySeller   => "Продавец",
+            DeliveryPayment.PaidByCustomer => "Покупатель",
+            _ => G.Unreachable<string>(nameof(DeliveryPayment)),
+            };
+        }
+    }
+}
+

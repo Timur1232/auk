@@ -3,6 +3,7 @@ using System;
 using App.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,14 +11,16 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace App.Migrations
 {
     [DbContext(typeof(AuctionDbContext))]
-    partial class Db_ContextModelSnapshot : ModelSnapshot
+    [Migration("20260720104936_add_correct_foreign_keys_again")]
+    partial class add_correct_foreign_keys_again
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
 
-            modelBuilder.Entity("App.Models.Bid", b =>
+            modelBuilder.Entity("App.Models.Bet", b =>
                 {
                     b.Property<uint>("id")
                         .ValueGeneratedOnAdd()
@@ -39,7 +42,7 @@ namespace App.Migrations
 
                     b.HasIndex("user_login");
 
-                    b.ToTable("bids");
+                    b.ToTable("bets");
                 });
 
             modelBuilder.Entity("App.Models.Lot", b =>
@@ -68,6 +71,7 @@ namespace App.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("location")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("payment_method")
@@ -152,10 +156,10 @@ namespace App.Migrations
                     b.ToTable("users");
                 });
 
-            modelBuilder.Entity("App.Models.Bid", b =>
+            modelBuilder.Entity("App.Models.Bet", b =>
                 {
                     b.HasOne("App.Models.Lot", "lot")
-                        .WithMany("bids")
+                        .WithMany()
                         .HasForeignKey("lot_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -203,8 +207,6 @@ namespace App.Migrations
 
             modelBuilder.Entity("App.Models.Lot", b =>
                 {
-                    b.Navigation("bids");
-
                     b.Navigation("images");
                 });
 

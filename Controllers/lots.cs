@@ -21,7 +21,7 @@ public class PublicLotsController(AuctionDbContext db, IWebHostEnvironment env) 
         var lot = await model.GetById(id);
         if (lot == null) return NotFound();
 
-        var images = await lot.GetImages(db).ToListAsync();
+        var images = lot.images.ToList();
         var seller = await db.GetUserByLogin(lot.user_login);
         var current_user = HttpContext.GetUser();
         var is_owner = current_user?.login == lot.user_login;
@@ -33,6 +33,22 @@ public class PublicLotsController(AuctionDbContext db, IWebHostEnvironment env) 
             is_owner = is_owner
         };
         return View("lot_details", vm);
+    }
+
+    [HttpPost("{id}/bid")]
+    [Authorize, GetUserStrict]
+    public async Task<IActionResult> MakeBid([FromRoute] uint id, [FromForm] Lot.BidForm req)
+    {
+        var user = HttpContext.GetUser()!;
+        var (new_price, error) = await model.MakeBid(id, req, user.login);
+
+        if (error != null) {
+            Response.StatusCode = 400;
+            ViewData["errors"] = error;
+            return View("bid_form");
+        }
+
+        return View("bid_form", new BidFormData{ lot_id = id, price = new_price, price_changed = true });
     }
 }
 
@@ -95,14 +111,15 @@ public class UserLotsController(AuctionDbContext db, IWebHostEnvironment env) : 
         return Ok();
     }
 
-    [HttpPatch("{id}")]
-    public async Task<IActionResult> UpdateById(uint id, [FromForm] Lot.CreateRequest req)
-    {
-        var (updated_lot, err) = await model.UpdateById(id, req);
-        if (err != ModelError.None || updated_lot == null) {
-            Response.StatusCode = 400;
-            return Content(err.GetMessage());
-        }
-        return Ok(updated_lot);
-    }
+    // [HttpPatch("{id}")]
+    // public async Task<IActionResult> UpdateById(uint id, [FromForm] Lot.CreateRequest req)
+    // {
+    //     var (updated_lot, err) = await model.UpdateById(id, req);
+    //     if (err != ModelError.None || updated_lot == null) {
+    //         Response.StatusCode = 400;
+    //         return Content(err.GetMessage());
+    //     }
+    //     return Ok(updated_lot);
+    // }
+
 }

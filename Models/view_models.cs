@@ -47,3 +47,10 @@ public class UserLotCard
     public decimal current_price;
     public string? thumbnail_path;
 }
+
+public class BidFormData
+{
+    public uint lot_id;
+    public decimal price;
+    public bool price_changed;
+}

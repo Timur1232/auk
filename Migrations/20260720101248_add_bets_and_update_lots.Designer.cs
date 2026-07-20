@@ -3,6 +3,7 @@ using System;
 using App.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,14 +11,16 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace App.Migrations
 {
     [DbContext(typeof(AuctionDbContext))]
-    partial class Db_ContextModelSnapshot : ModelSnapshot
+    [Migration("20260720101248_add_bets_and_update_lots")]
+    partial class add_bets_and_update_lots
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
 
-            modelBuilder.Entity("App.Models.Bid", b =>
+            modelBuilder.Entity("App.Models.Bet", b =>
                 {
                     b.Property<uint>("id")
                         .ValueGeneratedOnAdd()
@@ -26,20 +29,13 @@ namespace App.Migrations
                     b.Property<uint>("lot_id")
                         .HasColumnType("INTEGER");
 
-                    b.Property<decimal>("price")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("user_login")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("id");
 
-                    b.HasIndex("lot_id");
-
-                    b.HasIndex("user_login");
-
-                    b.ToTable("bids");
+                    b.ToTable("bets");
                 });
 
             modelBuilder.Entity("App.Models.Lot", b =>
@@ -68,6 +64,7 @@ namespace App.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("location")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("payment_method")
@@ -87,10 +84,6 @@ namespace App.Migrations
 
                     b.HasKey("id");
 
-                    b.HasIndex("tag_id");
-
-                    b.HasIndex("user_login");
-
                     b.ToTable("lots");
                 });
 
@@ -108,8 +101,6 @@ namespace App.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("id");
-
-                    b.HasIndex("lot_id");
 
                     b.ToTable("lot_images");
                 });
@@ -150,74 +141,6 @@ namespace App.Migrations
                         .IsUnique();
 
                     b.ToTable("users");
-                });
-
-            modelBuilder.Entity("App.Models.Bid", b =>
-                {
-                    b.HasOne("App.Models.Lot", "lot")
-                        .WithMany("bids")
-                        .HasForeignKey("lot_id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("App.Models.User", "user")
-                        .WithMany("bets")
-                        .HasForeignKey("user_login")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("lot");
-
-                    b.Navigation("user");
-                });
-
-            modelBuilder.Entity("App.Models.Lot", b =>
-                {
-                    b.HasOne("App.Models.Tag", "tag")
-                        .WithMany("lots")
-                        .HasForeignKey("tag_id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("App.Models.User", "user")
-                        .WithMany("lots")
-                        .HasForeignKey("user_login")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("tag");
-
-                    b.Navigation("user");
-                });
-
-            modelBuilder.Entity("App.Models.LotImage", b =>
-                {
-                    b.HasOne("App.Models.Lot", "lot")
-                        .WithMany("images")
-                        .HasForeignKey("lot_id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("lot");
-                });
-
-            modelBuilder.Entity("App.Models.Lot", b =>
-                {
-                    b.Navigation("bids");
-
-                    b.Navigation("images");
-                });
-
-            modelBuilder.Entity("App.Models.Tag", b =>
-                {
-                    b.Navigation("lots");
-                });
-
-            modelBuilder.Entity("App.Models.User", b =>
-                {
-                    b.Navigation("bets");
-
-                    b.Navigation("lots");
                 });
 #pragma warning restore 612, 618
         }

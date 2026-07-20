@@ -1,7 +1,10 @@
-@model App.Models.LotDetailsViewModel
+@using App.Models;
+@using App.Extentions;
+@model App.Models.LotDetailsViewModel;
 @{
     var saved_page = (string?)ViewData["page"] ?? "0";
     var first_image = Model.images.FirstOrDefault();
+    var user = ViewData.GetUser();
 }
 
 <div class="content-container lot-detail">
@@ -31,18 +34,23 @@
 
             <div class="lot-price-details">
                 <span class="lot-price-label">Текущая цена:</span>
-                <span class="lot-price">@Model.lot.current_price</span>
+                <span id="lot-price" class="lot-price">@Model.lot.current_price</span>
             </div>
 
             @if (!Model.is_owner) {
-                <form class="form bid-form" method="post" action="/lots/@Model.lot.id/bid">
-                    <div class="form-field">
-                        <input type="number" name="amount" placeholder="Ваша ставка" step="0.01" min="@(Model.lot.current_price + 0.01M)" required />
-                    </div>
-                    <button class="form-submit" type="submit">Сделать ставку</button>
-                </form>
+                if (user != null) {
+                    @await Html.PartialAsync("bid_form", new BidFormData {
+                        lot_id = Model.lot.id,
+                        price = Model.lot.current_price,
+                    });
+                } else {
+                    <p class="bid-notice">
+                        Войдите, чтобы делать ставки.
+                        <a href="/auth/login?saved_location=@ViewData.GetCurrentPath()" class="button">Вход</a>
+                    </p>
+                }
             } else {
-                <p class="owner-notice">Вы владелец этого лота</p>
+                <p class="bid-notice">Вы владелец этого лота</p>
             }
 
             <div class="lot-meta">
@@ -78,7 +86,7 @@
     (function (){
         const images = ultra.by_selector_all('.thumbnail-item');
         for (const i of images) {
-            i.$on_click(fuwnction() {
+            i.$on_click(function() {
                 const main_img = ultra.by_id('mainImage');
                 const src = this.dataset.image;
                 if (src) {

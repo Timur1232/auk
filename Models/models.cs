@@ -10,6 +10,11 @@ public class User
     [EmailAddress] public required string? email {get; set;}
     [Required]     public required string password_hash {get; set;}
 
+    [InverseProperty(nameof(Lot.user))]
+    public ICollection<Lot> lots {get; set;} = new List<Lot>();
+    [InverseProperty(nameof(Bid.user))]
+    public ICollection<Bid> bets {get; set;} = new List<Bid>();
+
     public record LoginRequest(string login_or_email, string password, string? last_saved_location = null);
     public record RegisterRequest(string login, string? email, string password = "", string password_confirm = "", string? last_saved_location = null);
 
@@ -17,21 +22,47 @@ public class User
     public Dto ToDto() => new Dto(login, email);
 }
 
+public enum PaymentMethod
+{
+    None,
+    OnMeeting,
+    ViaBank,
+}
+
+public enum DeliveryPayment
+{
+    PaidBySeller,
+    PaidByCustomer,
+}
+
 public class Lot
 {
     [Key] public uint id {get; set;}
 
-    [Required, ForeignKey(nameof(User))]
-    public string user_login {get; set;} = null!;
+    [Required] public string user_login {get; set;} = null!;
+    [Required] public uint tag_id {get; set;}
 
-    [ForeignKey(nameof(Tag))]
-    public uint tag_id {get; set;}
-
-    [Required] public string title {get; set;} = null!;
-               public int count {get; set;} = 1;
-    [Required] public decimal initial_price {get; set;}
-               public decimal current_price {get; set;}
+    [Required] public string title            {get; set;} = null!;
+               public int count               {get; set;} = 1;
+    [Required] public decimal initial_price   {get; set;}
+               public decimal current_price   {get; set;}
     [Required] public DateTimeOffset end_time {get; set;}
+
+    public string? description {get; set;}
+    public string? location        {get; set;}
+    [Required] public string payment_method   {get; set;} = PaymentMethod.None.ToString();
+    [Required] public string delivery_payment {get; set;} = DeliveryPayment.PaidByCustomer.ToString();
+
+    [ForeignKey(nameof(user_login))]
+    public User? user {get; set;}
+    [ForeignKey(nameof(tag_id))]
+    public Tag? tag {get; set;}
+
+    [InverseProperty(nameof(LotImage.lot))]
+    public ICollection<LotImage> images {get; set;} = new List<LotImage>();
+
+    [InverseProperty(nameof(Bid.lot))]
+    public ICollection<Bid> bids {get; set;} = new List<Bid>();
 
     public record CreateRequest(
         string title,
@@ -57,8 +88,21 @@ public class Lot
         return lot;
     }
 
-    public async Task<Tag?> GetTag(AuctionDbContext db) => await db.tags.FindAsync(tag_id);
-    public IQueryable<LotImage> GetImages(AuctionDbContext db) => db.lot_images.Where(i => i.lot_id == id);
+    public async Task<decimal> RecalculatePrice(AuctionDbContext db)
+    {
+        var last_bet = await db.bids.Where(b => b.lot_id == id)
+            .OrderByDescending(b => b.id)
+            .FirstOrDefaultAsync();
+        if (last_bet == null) {
+            return current_price;
+        }
+        current_price = last_bet.price;
+        return current_price;
+    }
+
+    public record BidForm(
+        decimal amount
+    );
 }
 
 public class LotImage
@@ -66,6 +110,9 @@ public class LotImage
     [Key] public uint id {get; set;}
     [ForeignKey(nameof(Lot))] public uint lot_id {get; set;}
     [Required] public string image_path {get; set;} = null!;
+
+    [ForeignKey(nameof(lot_id))]
+    public Lot? lot {get; set;}
 }
 
 [Index(nameof(name), IsUnique = true)]
@@ -83,5 +130,20 @@ public class Tag
         };
     }
 
-    public IQueryable<Lot> GetLots(AuctionDbContext db) => db.lots.Where(l => l.tag_id == id);
+    [InverseProperty(nameof(Lot.tag))]
+    public ICollection<Lot> lots {get; set;} = new List<Lot>();
+}
+
+public class Bid
+{
+    [Key] public uint id {get; set;}
+    [Required] public required string user_login {get; set;}
+    [Required] public uint lot_id {get; set;}
+
+    [Required] public decimal price {get; set;}
+
+    [ForeignKey(nameof(user_login))]
+    public User? user {get; set;}
+    [ForeignKey(nameof(lot_id))]
+    public Lot? lot {get; set;}
 }

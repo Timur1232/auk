@@ -7,7 +7,12 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
 
     public async Task<Lot?> GetById(uint id)
     {
-        var lot = await db.lots.FindAsync(id);
+        // TODO: maybe separate into different methods or query view parameters
+        var lot = await db.lots
+            .Include(l => l.images)
+            .Include(l => l.user)
+            .Include(l => l.bids.OrderByDescending(b => b.id))
+            .FirstOrDefaultAsync(l => l.id == id);
         return lot;
     }
 
@@ -16,7 +21,7 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
             null => db.lots,
             _ => db.lots.Where(l => l.tag_id == tag_id)
         };
-        return lots_query.Skip(page*page_size).Take(page_size);
+        return lots_query.Skip(page*page_size).Take(page_size).Include(l => l.images);
     }
 
     public async Task<HomePageModel> HomePage(uint? tag_id, int page, int page_size = DEFAULT_PAGE_SIZE)
@@ -24,7 +29,7 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
         var lots = GetPage(tag_id, page, page_size);
         var lot_cards = new List<HomePageModel.LotCard>();
         foreach (var lot in lots) {
-            var image = await lot.GetImages(db).FirstOrDefaultAsync();
+            var image = lot.images.FirstOrDefault();
             lot_cards.Add(new HomePageModel.LotCard{
                 id = lot.id,
                 image_path = image?.image_path,
@@ -42,23 +47,22 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
 
     public async Task<(Lot? deleted_lot, ModelError err)> DeleteById(uint id)
     {
-        var lot = await db.lots.FindAsync(id);
+        var lot = await GetById(id);
         if (lot == null) {
             return (null, ModelError.NotExist);
         }
 
-        var images = await db.lot_images.Where(i => i.lot_id == id).ToListAsync();
+        var images = lot.images;
 
         var uploadsPath = Path.Combine(env.WebRootPath, "uploads", "lot_images");
         foreach (var img in images) {
-            var fileName = Path.GetFileName(img.image_path);
-            var filePath = Path.Combine(uploadsPath, fileName);
-            if (System.IO.File.Exists(filePath)) {
-                System.IO.File.Delete(filePath);
+            var file_name = Path.GetFileName(img.image_path);
+            var file_path = Path.Combine(uploadsPath, file_name);
+            if (System.IO.File.Exists(file_path)) {
+                System.IO.File.Delete(file_path);
             }
         }
 
-        db.lot_images.RemoveRange(images);
         db.lots.Remove(lot);
 
         if (!await db.TrySaveChangesAsync()) {
@@ -81,17 +85,12 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
         return (entry.Entity, ModelError.None);
     }
 
-    public async Task<(Lot? lot, List<string> errors)> CreateLot(Lot.CreateRequest req, string userLogin)
+    public async Task<(Lot? lot, List<string> errors)> CreateLot(Lot.CreateRequest req, string user_login)
     {
         var errors = ValidateCreate(req);
         if (errors.Count > 0) return (null, errors);
 
-        var lot = Lot.From(req, userLogin);
-        db.lots.Add(lot);
-        if (!await db.TrySaveChangesAsync()) {
-            errors.Add("Ошибка сохранения лота в базу данных.");
-            return (null, errors);
-        }
+        var lot = Lot.From(req, user_login);
 
         var uploads_path = Path.Combine(env.WebRootPath, "uploads", "lot_images");
         Directory.CreateDirectory(uploads_path);
@@ -114,11 +113,20 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
                 lot_id = lot.id,
                 image_path = $"/uploads/lot_images/{file_name}"
             };
-            db.lot_images.Add(lot_image);
+
+            lot.images.Add(lot_image);
         }
 
+        db.lots.Add(lot);
         if (!await db.TrySaveChangesAsync()) {
-            errors.Add("Ошибка сохранения изображений.");
+            errors.Add("Ошибка сохранения в базу данных.");
+            foreach (var img in lot.images) {
+                var file_name = Path.GetFileName(img.image_path);
+                var file_path = Path.Combine(uploads_path, file_name);
+                if (System.IO.File.Exists(file_path)) {
+                    System.IO.File.Delete(file_path);
+                }
+            }
             return (null, errors);
         }
 
@@ -154,13 +162,17 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
 
     public async Task<List<UserLotCard>> GetUserLots(string user_login)
     {
-        var lots = await db.lots
-            .Where(l => l.user_login == user_login)
-            .OrderByDescending(l => l.id)
-            .ToListAsync();
+        var user = await db.users
+            .Where(u => u.login == user_login)
+            .Include(u => u.lots)
+            .FirstOrDefaultAsync();
+
+        if (user == null) {
+            return new();
+        }
 
         var cards = new List<UserLotCard>();
-        foreach (var lot in lots) {
+        foreach (var lot in user.lots) {
             var firstImage = await db.lot_images
                 .Where(i => i.lot_id == lot.id)
                 .OrderBy(i => i.id)
@@ -174,5 +186,38 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
             });
         }
         return cards;
+    }
+
+    public async Task<(decimal new_price, string? err)> MakeBid(uint id, Lot.BidForm req, string user_login)
+    {
+        var lot = await db.lots
+            .Include(l => l.user)
+            .FirstOrDefaultAsync(l => l.id == id);
+
+        if (lot == null)
+            return (0, "Лот не найден.");
+
+        if (lot.end_time <= DateTimeOffset.Now)
+            return (0, "Лот закрыт для ставок.");
+
+        if (lot.user_login == user_login)
+            return (0, "Вы не можете делать ставку на свой лот.");
+
+        if (req.amount <= lot.current_price)
+            return (0, "Ставка должна быть больше текущей цены.");
+
+        var bet = new Bid {
+            user_login = user_login,
+            lot_id = id,
+            price = req.amount
+        };
+
+        db.bids.Add(bet);
+        lot.current_price = req.amount;
+
+        if (!await db.TrySaveChangesAsync())
+            return (0, "Ошибка сохранения ставки.");
+
+        return (lot.current_price, null);
     }
 }

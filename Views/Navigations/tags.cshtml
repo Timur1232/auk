@@ -1,0 +1,11 @@
+@model IEnumerable<App.Models.TagNavigation>;
+
+<nav class="tags-nav">
+    <ul>
+        @foreach (var it in @Model) {
+            <li>
+                <a href="/?tag_id=@(it.id)">@(it.name)</a>
+            </li>
+        }
+    </ul>
+</nav>

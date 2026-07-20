@@ -21,7 +21,7 @@
 
     <label for="tag">Категория</label>
     <div class="form-field">
-        <select name="tag_id" id="tag">
+        <select name="tag_id" id="tag" required>
             <option value="" selected>Выберите</option>
             @foreach(var tag in @Model.tags) {
                 <option value="@tag.id">@tag.name</option>
