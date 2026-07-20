@@ -1,0 +1,42 @@
+@model List<App.Models.UserBetCard>
+@{
+    var rendered_lots = new List<uint>();
+}
+
+@if (Model.Count == 0) {
+    <p>Вы ещё не делали ставок.</p>
+} else {
+    <div class="user-list">
+        @foreach (var bet in Model) {
+            @if (rendered_lots.Contains(bet.lot_id)) {
+                continue;
+            } else {
+                rendered_lots.Add(bet.lot_id);
+            }
+            <div class="user-list-item" onclick="ultra.from_dom(this).$by_selector('.user-item-info a').click()">
+                <div class="user-item-thumb">
+                    <img src="@(bet.thumbnail_path ?? "/images/no-image.png")" alt="" />
+                </div>
+                <div class="user-item-info">
+                    <a href="/lots/@bet.lot_id">@bet.title</a>
+                </div>
+                @if (bet.is_leader) {
+                    <span class="leader-badge">Вы лидер</span>
+                } else {
+                    <div class="outdib">
+                        <span class="outbid-badge">Вас перебили</span>
+                        <span class="outbid-price">Текущая цена: </span>
+                        <span class="lot-price">@bet.current_price</span>
+                    </div>
+                }
+                <div class="user-item-price">
+                    <span class="price-label">Ваша ставка: </span>
+                    <span class="lot-price">@bet.bet_price</span>
+                </div>
+                <div class="user-item-end">
+                    Окончание: @bet.end_time.ToString("g")
+                </div>
+            </div>
+        }
+    </div>
+}

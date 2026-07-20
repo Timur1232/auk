@@ -29,6 +29,7 @@ public class AuctionDbContext(DbContextOptions opt) : DbContext(opt)
     public DbSet<LotImage> lot_images {get; set;} = null!;
     public DbSet<Tag>      tags       {get; set;} = null!;
     public DbSet<Bid>      bids       {get; set;} = null!;
+    public DbSet<Purchase> purchases  {get; set;} = null!;
 
     public async Task<User?> GetUserByClaims(ClaimsPrincipal user_claims)
     {

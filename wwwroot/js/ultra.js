@@ -91,6 +91,13 @@ const ultra = (function() {
                 throw new Exception('Unexpected classList command: ' + command);
             }
 
+            if (prop === '$id') {
+                return (id) => {
+                    target.id = id;
+                    return receiver;
+                }
+            }
+
             if (prop === '$style') {
                 return (name, value) => {
                     target.style[name] = value;
@@ -111,15 +118,15 @@ const ultra = (function() {
                 };
             }
 
-            if (prop === '$by_id') {
-                return (id) => {
-                    return by_id(id, target);
+            if (prop === '$by_selector' || prop === '$find') {
+                return (selector) => {
+                    return by_selector(selector, target);
                 };
             }
 
-            if (prop === '$by_selector') {
+            if (prop === '$by_selector_all' || prop === '$find_all') {
                 return (selector) => {
-                    return by_selector(selector, target);
+                    return by_selector_all(selector, target);
                 };
             }
 
@@ -167,6 +174,7 @@ const ultra = (function() {
     };
 
     function from_dom(element) {
+        if (!element) return null;
         if (element.$node) return element;
         return new Proxy(element, tag_handler);
     }
@@ -183,8 +191,8 @@ const ultra = (function() {
         }
     }
 
-    function by_id(id, root = document) {
-        const element = root.getElementById(id);
+    function by_id(id) {
+        const element = document.getElementById(id);
         return from_dom(element);
     }
 

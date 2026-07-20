@@ -1,19 +1,24 @@
 @model App.Models.BidFormData;
+@{
+    var min_bid_str = (Model.price + 0.01M).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+}
 
-<form class="form bid-form" method="post" action="/lots/@(Model.lot_id)/bid"
-    hx-post="/lots/@(Model.lot_id)/bid"
-    hx-target="this"
-    hx-swap="outerHTML"
->
-    <div class="form-field">
-        <input type="number" name="amount" placeholder="Ваша ставка" step="0.01" min="@(Model.price + 0.01M)" required />
-    </div>
-    <button class="form-submit" type="submit">Сделать ставку</button>
-
+<div id="bid-form">
+    <form class="form bid-form" method="post" action="/lots/@(Model.lot_id)/bid"
+        hx-post="/lots/@(Model.lot_id)/bid"
+        hx-target="#bid-form"
+        hx-swap="outerHTML"
+    >
+        <div class="form-field">
+            <input type="number" name="amount" placeholder="Ваша ставка" step="0.01" min="@(min_bid_str)" value="@(min_bid_str)" required />
+            <span class="lot-price"></span>
+        </div>
+        <button class="form-submit" type="submit">Сделать ставку</button>
+    </form>
     <div id="error">
         @await Html.PartialAsync("errors")
     </div>
-</form>
+</div>
 @if (@Model.price_changed) {
     <span hx-swap-oob="true" id="lot-price" class="lot-price">@Model.price</span>
 }

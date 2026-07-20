@@ -1,12 +1,20 @@
+@using App;
+@using App.Models;
+@using App.Extentions;
 @model App.Models.CreateFormData;
 
-<form class="form form-narrow"
+<form class="form form-narrow" id="lot-create-form"
     action="/lots/my/create" method="post"
     enctype="multipart/form-data"
 >
     <label for="name">Название</label>
     <div class="form-field">
         <input id="title" name="title" type="text" required autofocus />
+    </div>
+
+    <label for="city">Город</label>
+    <div class="form-field">
+        <input id="city" name="city" type="text" required />
     </div>
 
     <label for="price">Цена</label>
@@ -16,7 +24,7 @@
 
     <label for="count">Количество</label>
     <div class="form-field">
-        <input id="count" name="count" type="number" step="1" value="1" min="1"/>
+        <input id="count" name="count" type="number" step="1" value="1" min="1" required/>
     </div>
 
     <label for="tag">Категория</label>
@@ -34,11 +42,15 @@
         <input id="end_time" name="end_time" type="datetime-local" required />
     </div>
 
+    <label for"description">Описание</label>
+    <div class="form-field">
+        <textarea id="description" name="description" type="text"></textarea>
+    </div>
+
     <label for="thumbnail">Обложка</label>
     <div class="form-field">
         <input id="thumbnail-input" name="thumbnail" type="file" accept="image/*" />
         <div id="thumbnail-container" class="file-loader"></div>
-        <script src="/js/thumbnail_load.js"></script>
     </div>
 
     <div class="file-load-toolbar">
@@ -52,6 +64,26 @@
         </div>
     </div>
 
+    <label for"payment_method">Метод оплаты</label>
+    <div class="form-field">
+        <select id="payment_method" name="payment_method" required>
+            <option value="" selected>Выберите</option>
+            @foreach (var p in G.EnumIterate<PaymentMethod>()) {
+                <option value="@p.ToString()">@p.GetDescription()</option>
+            }
+        </select>
+    </div>
+
+    <label for"delivery_payment">Оплата доставки</label>
+    <div class="form-field">
+        <select id="delivery_payment" name="delivery_payment" required>
+            <option value="" selected>Выберите</option>
+            @foreach (var p in G.EnumIterate<DeliveryPayment>()) {
+                <option value="@p.ToString()">@p.GetDescription()</option>
+            }
+        </select>
+    </div>
+
     <div id="error">
         @await Html.PartialAsync("errors")
     </div>
@@ -60,4 +92,6 @@
 
     <button class="form-submit" type="submit">Создать</button>
     <button class="form-reset" type="reset">Очистить</button>
+
+    <script src="/js/lot_create.js"></script>
 </form>

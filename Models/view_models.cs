@@ -8,6 +8,8 @@ public class HomePageModel
         public string? image_path;
         public string title;
         public decimal price;
+        public DateTimeOffset end_time;
+        public bool closed;
     }
 
     public IEnumerable<LotCard> cards = null!;
@@ -34,10 +36,21 @@ public class LotDetailsViewModel
     public bool is_owner;
 }
 
-public class UserLotsViewModel
+public class UserInfoData
 {
-    public User.Dto user = null!;
+    public string user_login = null!;
     public List<UserLotCard> lots = new();
+}
+
+public class UserBetCard
+{
+    public uint lot_id;
+    public string title = null!;
+    public string? thumbnail_path;
+    public DateTimeOffset end_time;
+    public decimal bet_price;
+    public decimal current_price;
+    public bool is_leader;
 }
 
 public class UserLotCard
@@ -52,5 +65,5 @@ public class BidFormData
 {
     public uint lot_id;
     public decimal price;
-    public bool price_changed;
+    public bool price_changed = false;
 }

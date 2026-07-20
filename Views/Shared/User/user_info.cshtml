@@ -1,0 +1,56 @@
+@using App.Extentions;
+@model App.Models.UserInfoData;
+@{
+    var user = ViewData.GetUser();
+    var this_user = user != null && user.login == Model.user_login;
+}
+
+<div class="content-container">
+    <div class="user-info">
+        <p>Логин: @Model.user_login</p>
+        @if (this_user) {
+            <p>Почта: @user.email</p>
+        }
+    </div>
+
+    @if (this_user) {
+        <div><a href="/lots/my/create" class="button">Создать лот</a></div>
+    }
+
+    <div class="user-tabs">
+        <div class="tabs-header">
+            <button class="tab-btn active" data-tab="lots"
+                    hx-get="/user/@(Model.user_login)/lots-list"
+                    hx-target="#tab-content"
+                    hx-on:click="activate_tab(this)"
+            >
+                @(this_user ? "Мои лоты" : "Лоты")
+            </button>
+            @if (this_user) {
+                <button class="tab-btn" data-tab="bets"
+                        hx-get="/user/@(Model.user_login)/bets-list"
+                        hx-target="#tab-content"
+                        hx-on:click="activate_tab(this)"
+                >
+                    Мои ставки
+                </button>
+                <button class="tab-btn" data-tab="bets"
+                        hx-get="/user/@(Model.user_login)/purchases-list"
+                        hx-target="#tab-content"
+                        hx-on:click="activate_tab(this)"
+                >
+                    Мои покупки
+                </button>
+            }
+        </div>
+        <div id="tab-content">
+            @await Html.PartialAsync("User/user_lots", Model)
+        </div>
+    </div>
+    <script>
+        function activate_tab(el) {
+            ultra.by_selector_all('.tab-btn.active').forEach(el => el.$class_remove('active'));
+            ultra.from_dom(el).$class('active');
+        }
+    </script>
+</div>

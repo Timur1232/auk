@@ -11,4 +11,12 @@
     <img src="@Model.image_path" alt="" />
     <p>@Model.title</p>
     <span class="lot-price">@Model.price</span>
+    <p class="lot-card-end-time">
+        @if (@Model.closed) {
+            <span class="lot-card-closed">Закрыт</span>
+        } else {
+            <span>До</span>
+        }
+        @Model.end_time.ToString("dd MMM yyyy")
+    </p>
 </div>

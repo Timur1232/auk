@@ -37,7 +37,11 @@
                 <span id="lot-price" class="lot-price">@Model.lot.current_price</span>
             </div>
 
-            @if (!Model.is_owner) {
+            @if (Model.lot.closed) {
+                <p class="bid-notice">Лот закрыт.</p>
+            } else if (Model.is_owner) {
+                <p class="bid-notice">Вы владелец этого лота.</p>
+            } else {
                 if (user != null) {
                     @await Html.PartialAsync("bid_form", new BidFormData {
                         lot_id = Model.lot.id,
@@ -49,11 +53,21 @@
                         <a href="/auth/login?saved_location=@ViewData.GetCurrentPath()" class="button">Вход</a>
                     </p>
                 }
-            } else {
-                <p class="bid-notice">Вы владелец этого лота</p>
             }
 
             <div class="lot-meta">
+                <p>
+                    @if (Model.lot.closed) {
+                        <span class="label">Победитель:</span>
+                    } else {
+                        <span class="label">Текущий лидер:</span>
+                    }
+                    @if (Model.lot.leader_login != null) {
+                        <span class="value"><a href="/user/@(Model.lot.leader_login)">@Model.lot.leader_login</a></span>
+                    } else {
+                        <span class="value">Нет.</span>
+                    }
+                </p>
                 <p><span class="label">Дата закрытия:</span> <span class="value">@Model.lot.end_time.ToString("g")</span></p>
                 <p><span class="label">Начальная цена:</span> <span class="value">@Model.lot.initial_price</span></p>
                 <p><span class="label">Количество:</span> <span class="value">@Model.lot.count</span></p>

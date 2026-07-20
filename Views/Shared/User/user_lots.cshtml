@@ -1,0 +1,37 @@
+@using App.Extentions;
+@model App.Models.UserInfoData;
+@{
+    var user = ViewData.GetUser();
+    var this_user = user != null && user.login == Model.user_login;
+}
+
+@if (Model.lots.Count == 0) {
+    <p>У вас пока нет лотов.</p>
+} else {
+    <div class="user-list">
+        @foreach (var lot in Model.lots) {
+            <div class="user-list-item" id="lot-@lot.id">
+                <div class="user-item-clickable" onclick="ultra.from_dom(this).$by_selector('.user-item-info a').click()">
+                    <div class="user-item-thumb">
+                        <img src="@(lot.thumbnail_path ?? "/images/no-image.png")" alt="" />
+                    </div>
+                    <div class="user-item-info">
+                        <a href="/lots/@lot.id">@lot.title</a>
+                        <span class="lot-price">@lot.current_price</span>
+                    </div>
+                </div>
+                @if (this_user) {
+                    <div class="user-item-actions">
+                        <button class="delete-btn"
+                                hx-delete="/lots/my/@lot.id"
+                                hx-target="#lot-@lot.id"
+                                hx-swap="outerHTML"
+                                hx-confirm="Удалить лот?">
+                            Удалить
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}

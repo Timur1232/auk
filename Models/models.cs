@@ -14,6 +14,8 @@ public class User
     public ICollection<Lot> lots {get; set;} = new List<Lot>();
     [InverseProperty(nameof(Bid.user))]
     public ICollection<Bid> bets {get; set;} = new List<Bid>();
+    [InverseProperty(nameof(Purchase.user))]
+    public ICollection<Purchase> purchases {get; set;} = new List<Purchase>();
 
     public record LoginRequest(string login_or_email, string password, string? last_saved_location = null);
     public record RegisterRequest(string login, string? email, string password = "", string password_confirm = "", string? last_saved_location = null);
@@ -46,13 +48,29 @@ public class Lot
                public int count               {get; set;} = 1;
     [Required] public decimal initial_price   {get; set;}
                public decimal current_price   {get; set;}
+
     [Required] public DateTimeOffset end_time {get; set;}
 
     public string? description {get; set;}
-    public string? location        {get; set;}
+    public string? city        {get; set;}
     [Required] public string payment_method   {get; set;} = PaymentMethod.None.ToString();
     [Required] public string delivery_payment {get; set;} = DeliveryPayment.PaidByCustomer.ToString();
 
+    public string? leader_login {get; set;}
+
+    public bool closed {get; set;} = false;
+
+    public bool UpdateClosed()
+    {
+        var now = DateTime.UtcNow;
+        if (end_time <= now) {
+            closed = true;
+        }
+        return closed;
+    }
+
+    [ForeignKey(nameof(leader_login))]
+    public User? leader {get; set;}
     [ForeignKey(nameof(user_login))]
     public User? user {get; set;}
     [ForeignKey(nameof(tag_id))]
@@ -66,6 +84,10 @@ public class Lot
 
     public record CreateRequest(
         string title,
+        string? description,
+        string city,
+        string payment_method,
+        string delivery_payment,
         int count,
         decimal price,
         DateTime end_time,
@@ -84,6 +106,10 @@ public class Lot
             initial_price = data.price,
             current_price = data.price,
             end_time = data.end_time,
+            description = data.description,
+            city = data.city,
+            payment_method = data.payment_method,
+            delivery_payment = data.delivery_payment,
         };
         return lot;
     }
@@ -141,6 +167,20 @@ public class Bid
     [Required] public uint lot_id {get; set;}
 
     [Required] public decimal price {get; set;}
+
+    [ForeignKey(nameof(user_login))]
+    public User? user {get; set;}
+    [ForeignKey(nameof(lot_id))]
+    public Lot? lot {get; set;}
+}
+
+public class Purchase
+{
+    [Key] public uint id {get; set;}
+    [Required] public required string user_login {get; set;}
+    [Required] public uint lot_id {get; set;}
+
+    [Required] public decimal locked_price {get; set;}
 
     [ForeignKey(nameof(user_login))]
     public User? user {get; set;}

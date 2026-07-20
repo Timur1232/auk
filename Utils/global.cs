@@ -12,6 +12,11 @@ public enum LogLevel {
 
 public static class G
 {
+    public static IEnumerable<T> EnumIterate<T>()
+    {
+        return Enum.GetValues(typeof(T)).Cast<T>();
+    }
+
     [DoesNotReturn]
     public static void Todo(string? message = null)
     {

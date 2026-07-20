@@ -3,6 +3,7 @@ using System;
 using App.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace App.Migrations
 {
     [DbContext(typeof(AuctionDbContext))]
-    partial class Db_ContextModelSnapshot : ModelSnapshot
+    [Migration("20260720163719_add_purchases")]
+    partial class add_purchases
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
@@ -48,9 +51,6 @@ namespace App.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("city")
-                        .HasColumnType("TEXT");
-
                     b.Property<bool>("closed")
                         .HasColumnType("INTEGER");
 
@@ -74,6 +74,9 @@ namespace App.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("leader_login")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("location")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("payment_method")

@@ -42,13 +42,19 @@ public class PublicLotsController(AuctionDbContext db, IWebHostEnvironment env) 
         var user = HttpContext.GetUser()!;
         var (new_price, error) = await model.MakeBid(id, req, user.login);
 
+        var form_data = new BidFormData {
+            lot_id = id,
+        };
+
         if (error != null) {
-            Response.StatusCode = 400;
             ViewData["errors"] = error;
-            return View("bid_form");
+            return View("bid_form", form_data);
         }
 
-        return View("bid_form", new BidFormData{ lot_id = id, price = new_price, price_changed = true });
+        form_data.price = new_price;
+        form_data.price_changed = true;
+
+        return View("bid_form", form_data);
     }
 }
 

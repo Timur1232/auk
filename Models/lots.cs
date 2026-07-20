@@ -11,6 +11,7 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
         var lot = await db.lots
             .Include(l => l.images)
             .Include(l => l.user)
+            .Include(l => l.leader)
             .Include(l => l.bids.OrderByDescending(b => b.id))
             .FirstOrDefaultAsync(l => l.id == id);
         return lot;
@@ -21,7 +22,10 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
             null => db.lots,
             _ => db.lots.Where(l => l.tag_id == tag_id)
         };
-        return lots_query.Skip(page*page_size).Take(page_size).Include(l => l.images);
+        return lots_query
+            .Skip(page*page_size)
+            .Take(page_size)
+            .Include(l => l.images);
     }
 
     public async Task<HomePageModel> HomePage(uint? tag_id, int page, int page_size = DEFAULT_PAGE_SIZE)
@@ -35,6 +39,8 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
                 image_path = image?.image_path,
                 title = lot.title,
                 price = lot.current_price,
+                end_time = lot.end_time,
+                closed = lot.closed,
             });
         }
         var tags = await db.tags.ToListAsync();
@@ -87,7 +93,7 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
 
     public async Task<(Lot? lot, List<string> errors)> CreateLot(Lot.CreateRequest req, string user_login)
     {
-        var errors = ValidateCreate(req);
+        var errors = Validate.All(req, db);
         if (errors.Count > 0) return (null, errors);
 
         var lot = Lot.From(req, user_login);
@@ -133,31 +139,98 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
         return (lot, errors);
     }
 
-    public List<string> ValidateCreate(Lot.CreateRequest req)
+    public static class Validate
     {
-        var errors = new List<string>();
+        public static List<string> All(Lot.CreateRequest req, AuctionDbContext db)
+        {
+            var errors = new List<string>();
+            Title(req, ref errors);
+            Count(req, ref errors);
+            Price(req, ref errors);
+            EndTime(req, ref errors);
+            TagExists(req, db, ref errors);
+            EndTime(req, ref errors);
+            Images(req, ref errors);
+            City(req, ref errors);
+            PaymentMethod(req, ref errors);
+            DeliveryPayment(req, ref errors);
+            return errors;
+        }
 
-        if (string.IsNullOrWhiteSpace(req.title))
-            errors.Add("Название не может быть пустым.");
+        public static void Title(Lot.CreateRequest req, ref List<string> errors)
+        {
+            if (string.IsNullOrWhiteSpace(req.title))
+                errors.Add("Название не может быть пустым.");
+        }
 
-        if (req.count < 1)
-            errors.Add("Количество должно быть не меньше 1.");
+        public static void Count(Lot.CreateRequest req, ref List<string> errors)
+        {
+            if (req.count < 1)
+                errors.Add("Количество должно быть не меньше 1.");
+        }
 
-        if (req.price <= 0)
-            errors.Add("Цена должна быть положительной.");
+        public static void Price(Lot.CreateRequest req, ref List<string> errors)
+        {
+            if (req.price <= 0)
+                errors.Add("Цена должна быть положительной.");
+        }
 
-        if (req.end_time <= DateTimeOffset.Now)
-            errors.Add("Дата окончания должна быть в будущем.");
+        public static void EndTime(Lot.CreateRequest req, ref List<string> errors)
+        {
+            if (req.end_time <= DateTimeOffset.Now)
+                errors.Add("Дата окончания должна быть в будущем.");
+        }
 
-        Console.WriteLine(req.ToString());
-        var tag_exists = db.tags.Any(t => t.id == req.tag_id);
-        if (!tag_exists)
-            errors.Add("Выбранная категория не существует.");
+        public static void TagExists(Lot.CreateRequest req, AuctionDbContext db, ref List<string> errors)
+        {
+            var tag_exists = db.tags.Any(t => t.id == req.tag_id);
+            if (!tag_exists)
+                errors.Add("Выбранная категория не существует.");
+        }
 
-        if (req.thumbnail == null && (req.images == null || req.images.Count == 0))
-            errors.Add("Необходимо добавить хотя бы одно изображение.");
+        public static void Images(Lot.CreateRequest req, ref List<string> errors)
+        {
+            if (req.thumbnail == null && (req.images == null || req.images.Count == 0))
+                errors.Add("Необходимо добавить хотя бы одно изображение.");
+        }
 
-        return errors;
+        public static void City(Lot.CreateRequest req, ref List<string> errors)
+        {
+            if (string.IsNullOrEmpty(req.city))
+                errors.Add("Необходимо указать город.");
+        }
+
+        public static void PaymentMethod(Lot.CreateRequest req, ref List<string> errors)
+        {
+            if (string.IsNullOrEmpty(req.payment_method))
+                errors.Add("Необходимо указать способ оплаты.");
+            bool ok = false;
+            foreach (var p in G.EnumIterate<PaymentMethod>()) {
+                if (p.ToString() == req.payment_method) {
+                    ok = true;
+                    break;
+                }
+            }
+            if (!ok) {
+                errors.Add($"Способ {req.payment_method} не поддерживается.");
+            }
+        }
+
+        public static void DeliveryPayment(Lot.CreateRequest req, ref List<string> errors)
+        {
+            if (string.IsNullOrEmpty(req.delivery_payment))
+                errors.Add("Необходимо указать, кто оплачивает доставку.");
+            bool ok = false;
+            foreach (var p in G.EnumIterate<DeliveryPayment>()) {
+                if (p.ToString() == req.delivery_payment) {
+                    ok = true;
+                    break;
+                }
+            }
+            if (!ok) {
+                errors.Add($"Вариант оплаты {req.delivery_payment} не поддерживается.");
+            }
+        }
     }
 
     public async Task<List<UserLotCard>> GetUserLots(string user_login)
@@ -195,16 +268,16 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
             .FirstOrDefaultAsync(l => l.id == id);
 
         if (lot == null)
-            return (0, "Лот не найден.");
+            return (0M, "Лот не найден.");
 
         if (lot.end_time <= DateTimeOffset.Now)
-            return (0, "Лот закрыт для ставок.");
+            return (0M, "Лот закрыт для ставок.");
 
         if (lot.user_login == user_login)
-            return (0, "Вы не можете делать ставку на свой лот.");
+            return (0M, "Вы не можете делать ставку на свой лот.");
 
         if (req.amount <= lot.current_price)
-            return (0, "Ставка должна быть больше текущей цены.");
+            return (0M, "Ставка должна быть больше текущей цены.");
 
         var bet = new Bid {
             user_login = user_login,
@@ -214,9 +287,10 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
 
         db.bids.Add(bet);
         lot.current_price = req.amount;
+        lot.leader_login = user_login;
 
         if (!await db.TrySaveChangesAsync())
-            return (0, "Ошибка сохранения ставки.");
+            return (0M, "Ошибка сохранения ставки.");
 
         return (lot.current_price, null);
     }
