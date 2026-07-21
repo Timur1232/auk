@@ -37,6 +37,14 @@ public enum DeliveryPayment
     PaidByCustomer,
 }
 
+public enum LotStatus
+{
+    Playing,
+    WaitingPurchaseConfirm,
+    Purchased,
+    Denied,
+}
+
 public class Lot
 {
     [Key] public uint id {get; set;}
@@ -57,14 +65,16 @@ public class Lot
     [Required] public string delivery_payment {get; set;} = DeliveryPayment.PaidByCustomer.ToString();
 
     public string? leader_login {get; set;}
-
     public bool closed {get; set;} = false;
+
+    public string status {get; set;} = LotStatus.Playing.ToString();
 
     public bool UpdateClosed()
     {
         var now = DateTime.UtcNow;
         if (end_time <= now) {
             closed = true;
+            status = LotStatus.WaitingPurchaseConfirm.ToString();
         }
         return closed;
     }
@@ -78,6 +88,11 @@ public class Lot
 
     [InverseProperty(nameof(LotImage.lot))]
     public ICollection<LotImage> images {get; set;} = new List<LotImage>();
+
+    public LotImage? FirstImage()
+    {
+        return images.OrderBy(i => i.id).FirstOrDefault();
+    }
 
     [InverseProperty(nameof(Bid.lot))]
     public ICollection<Bid> bids {get; set;} = new List<Bid>();
@@ -114,21 +129,18 @@ public class Lot
         return lot;
     }
 
-    public async Task<decimal> RecalculatePrice(AuctionDbContext db)
+    public decimal RecalculatePrice()
     {
-        var last_bet = await db.bids.Where(b => b.lot_id == id)
+        var last_bet = bids.Where(b => b.lot_id == id)
             .OrderByDescending(b => b.id)
-            .FirstOrDefaultAsync();
+            .FirstOrDefault();
         if (last_bet == null) {
+            current_price = initial_price;
             return current_price;
         }
         current_price = last_bet.price;
         return current_price;
     }
-
-    public record BidForm(
-        decimal amount
-    );
 }
 
 public class LotImage

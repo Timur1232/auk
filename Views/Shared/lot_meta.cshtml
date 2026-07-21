@@ -1,0 +1,17 @@
+@using App.Extentions;
+@using App.Models;
+@model App.Models.Lot;
+@{
+    var payment_ok = Enum.TryParse(Model.payment_method, out PaymentMethod payment_method);
+    var delivery_ok = Enum.TryParse(Model.delivery_payment, out DeliveryPayment delivery_payment);
+}
+
+<div class="lot-meta">
+    <p><span class="label">Лот закрылся:</span> <span class="value">@Model.end_time.ToString("g")</span></p>
+    <p><span class="label">Местоположения:</span> <span class="value">@Model.city</span></p>
+    <p><span class="label">Начальная цена:</span> <span class="value">@Model.initial_price ₽</span></p>
+    <p><span class="label">Количество:</span> <span class="value">@Model.count</span></p>
+    <br>
+    <p><span class="label">Метод оплаты:</span> <span class="value">@(payment_ok ? payment_method.GetDescription() : "Неизвестно")</span></p>
+    <p><span class="label">Доставка оплачивает:</span> <span class="value">@(delivery_ok ? delivery_payment.GetDescription() : "Неизвестно")</span></p>
+</div>

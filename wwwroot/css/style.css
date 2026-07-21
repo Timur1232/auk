@@ -403,6 +403,7 @@ header {
 .lot-card img {
     object-fit:contain;
     flex-grow: 1;
+    aspect-ratio: 1/1;
 }
 .lot-price {
     color: var(--color-accent);
@@ -624,6 +625,38 @@ header {
     display: inline-block;
     margin: 1rem 0 0.5rem 1rem;
     transition: color 0.2s;
+}
+.bid-history {
+    margin-top: 40px;
+}
+.bid-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 0;
+}
+.bid-history-item {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+}
+.bid-history-item-index {
+    color: var(--color-text2);
+    min-width: 25px;
+}
+.bid-history-item-user {
+    width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.bid-history-item .lot-price {
+    font-size: 1em;
+    color: var(--color-text);
+}
+.lot-price.highlight,
+.highlight {
+    color: var(--color-accent);
 }
 @media (max-width: 768px) {
     .lot-detail-grid {

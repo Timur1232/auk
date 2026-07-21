@@ -55,5 +55,18 @@ public static class EnumExt
             };
         }
     }
+
+    extension (LotStatus s) {
+        public string GetDescription()
+        {
+            return s switch {
+            LotStatus.Playing => "Разыгрывается",
+            LotStatus.WaitingPurchaseConfirm => "Ожидание подтверждения",
+            LotStatus.Purchased => "Выкуплено",
+            LotStatus.Denied => "Отказано",
+            _ => G.Unreachable<string>(nameof(LotStatus)),
+            };
+        }
+    }
 }
 

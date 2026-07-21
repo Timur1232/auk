@@ -100,25 +100,12 @@ public class UserController(
             .Where(b => b.user_login == user.login)
             .OrderByDescending(b => b.id)
             .Include(b => b.lot)
-            .ThenInclude(l => l.images)
+            .ThenInclude(l => l!.images)
             .ToListAsync();
 
-        var cards = new List<UserBetCard>();
-        foreach (var bet in bets)
-        {
-            var lot = bet.lot!;
-            var first_image = lot.images.OrderBy(i => i.id).FirstOrDefault();
-            cards.Add(new UserBetCard {
-                lot_id = lot.id,
-                title = lot.title,
-                thumbnail_path = first_image?.image_path,
-                end_time = lot.end_time,
-                bet_price = bet.price,
-                current_price = lot.current_price,
-                is_leader = lot.leader_login == user.login
-            });
-        }
-        return View("user_bets", cards);
+        bets.Sort((b1, b2) => b2.lot!.closed.CompareTo(b1.lot!.closed));
+
+        return View("user_bets", bets);
     }
 
     [HttpGet("purchases-list")]
@@ -128,6 +115,14 @@ public class UserController(
         if (user.login != user_login) {
             return Unauthorized();
         }
-        return View("user_purchases");
+
+        var purchases = await db.purchases
+            .Where(p => p.user_login == user_login)
+            .OrderByDescending(p => p.id)
+            .Include(p => p.lot)
+            .ThenInclude(l => l!.images)
+            .ToListAsync();
+
+        return View("user_purchases", purchases);
     }
 }

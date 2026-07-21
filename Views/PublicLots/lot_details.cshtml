@@ -3,7 +3,6 @@
 @model App.Models.LotDetailsViewModel;
 @{
     var saved_page = (string?)ViewData["page"] ?? "0";
-    var first_image = Model.images.FirstOrDefault();
     var user = ViewData.GetUser();
 }
 
@@ -11,23 +10,7 @@
     <a href="/?page=@saved_page" class="back-link">← Вернуться</a>
 
     <div class="lot-detail-grid">
-        <div class="gallery">
-            <div class="main-image-container">
-                <img id="mainImage"
-                     src="@(first_image?.image_path ?? "/images/no-image.png")"
-                     alt="Главное изображение" />
-            </div>
-            <div class="thumbnails-container">
-                @if (Model.images.Count > 1) {
-                    foreach (var img in Model.images) {
-                        <div class="thumbnail-item @(img == first_image ? "active" : "")"
-                             data-image="@img.image_path">
-                            <img src="@img.image_path" alt="Миниатюра" />
-                        </div>
-                    }
-                }
-            </div>
-        </div>
+        @await Html.PartialAsync("images_gallery", Model.lot.images)
 
         <div class="info">
             <h1>@Model.lot.title</h1>
@@ -37,50 +20,30 @@
                 <span id="lot-price" class="lot-price">@Model.lot.current_price</span>
             </div>
 
-            @if (Model.lot.closed) {
-                <p class="bid-notice">Лот закрыт.</p>
-            } else if (Model.is_owner) {
-                <p class="bid-notice">Вы владелец этого лота.</p>
-            } else {
-                if (user != null) {
-                    @await Html.PartialAsync("bid_form", new BidFormData {
-                        lot_id = Model.lot.id,
-                        price = Model.lot.current_price,
-                    });
-                } else {
-                    <p class="bid-notice">
-                        Войдите, чтобы делать ставки.
-                        <a href="/auth/login?saved_location=@ViewData.GetCurrentPath()" class="button">Вход</a>
-                    </p>
+            @await Html.PartialAsync("bid_maker", Model)
+
+            @if (Model.lot.closed && Model.lot.leader_login != null && user != null && user.login == Model.lot.leader_login) {
+                @if (Model.lot.status == LotStatus.WaitingPurchaseConfirm.ToString()) {
+                    <div id="purchase-button">
+                        <p style="margin-top:0;">Вы победили! Можете оставить заказ, чтобы забрать содержимое лота.</p>
+                        <p style="margin-top:30px;"><a class="button" href="/lots/my/@(Model.lot.id)/purchase">Оставить заказ</a></p>
+                    </div>
+                } else if (Model.lot.status == LotStatus.Purchased.ToString()) {
+                    <p style="margin-top:0;">Вы выкупили лот.</p>
+                } else if (Model.lot.status == LotStatus.Denied.ToString()) {
+                    <p style="margin-top:0;">Вы отказались от покупки.</p>
                 }
             }
 
-            <div class="lot-meta">
-                <p>
-                    @if (Model.lot.closed) {
-                        <span class="label">Победитель:</span>
-                    } else {
-                        <span class="label">Текущий лидер:</span>
-                    }
-                    @if (Model.lot.leader_login != null) {
-                        <span class="value"><a href="/user/@(Model.lot.leader_login)">@Model.lot.leader_login</a></span>
-                    } else {
-                        <span class="value">Нет.</span>
-                    }
-                </p>
-                <p><span class="label">Дата закрытия:</span> <span class="value">@Model.lot.end_time.ToString("g")</span></p>
-                <p><span class="label">Начальная цена:</span> <span class="value">@Model.lot.initial_price</span></p>
-                <p><span class="label">Количество:</span> <span class="value">@Model.lot.count</span></p>
-            </div>
+            @await Html.PartialAsync("lot_meta", Model.lot)
 
             <div class="lot-description">
                 <h3>Описание</h3>
-                <p>Здесь будет описание лота (пока заглушка).</p>
-            </div>
-
-            <div class="lot-characteristics">
-                <h3>Характеристики</h3>
-                <p>Здесь будут характеристики (пока заглушка).</p>
+                @if (Model.lot.description != null) {
+                    <p>@Model.lot.description</p>
+                } else {
+                    <p>Нет описания</p>
+                }
             </div>
 
             <div class="seller-info">
@@ -88,29 +51,9 @@
                 <a href="/user/@Model.seller?.login">@(Model.seller?.login ?? "Неизвестно")</a>
             </div>
 
-            <div class="bid-history">
-                <h3>История ставок</h3>
-                <p>История ставок будет отображаться здесь.</p>
-            </div>
         </div>
     </div>
+    <div id="bid-history" class="bid-history">
+        @await Html.PartialAsync("bid_history", Model.lot.bids)
+    </div>
 </div>
-
-<script>
-    (function (){
-        const images = ultra.by_selector_all('.thumbnail-item');
-        for (const i of images) {
-            i.$on_click(function() {
-                const main_img = ultra.by_id('mainImage');
-                const src = this.dataset.image;
-                if (src) {
-                    main_img.src = src;
-                    for (const i of images) {
-                        i.$class_remove('active');
-                    }
-                    ultra.from_dom(this).$class('active');
-                }
-            });
-        }
-    })();
-</script>

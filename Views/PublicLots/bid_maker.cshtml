@@ -1,0 +1,59 @@
+@using App.Extentions;
+@model App.Models.LotDetailsViewModel;
+@{
+    var min_bid_str = (Model.lot.current_price + 0.01M).ToString("0.00");
+    var user = ViewData.GetUser();
+}
+
+<div id="bid-maker">
+    @if (Model.lot.closed) {
+        <p class="bid-notice">Лот закрыт.</p>
+    } else if (Model.is_owner) {
+        <p class="bid-notice">Вы владелец этого лота.</p>
+    } else {
+        if (user != null) {
+            if (@Model.lot.bids.Count > 0 && @Model.lot.leader_login == user.login) {
+                <p class="bid-notice">Вы уже сделали ставку.</p>
+                <p>Вы сможете сделать ее повторно, если кто-то ее перебъет или отмените ее.</p>
+                <button class="button"
+                    hx-delete="/lots/@(Model.lot.id)/bid"
+                    hx-target="#bid-maker"
+                    hx-swap="innerHTML"
+                >
+                    Отменить ставку
+                </button>
+            } else {
+                <form class="form bid-form" method="post" action="/lots/@(Model.lot.id)/bid"
+                    hx-post="/lots/@(Model.lot.id)/bid"
+                    hx-target="#bid-maker"
+                    hx-swap="outerHTML"
+                >
+                    <div class="form-field">
+                        <input id="bid-input" type="number" name="new_price" placeholder="Ваша ставка" step="0.01" min="@(min_bid_str)" value="@(min_bid_str)" required />
+                        <span class="lot-price"></span>
+                    </div>
+                    <button class="form-submit" type="submit">Сделать ставку</button>
+                </form>
+                <div id="error">
+                    @await Html.PartialAsync("errors")
+                </div>
+            }
+        } else {
+            <p class="bid-notice">
+                Войдите, чтобы делать ставки.
+                <a href="/auth/login?saved_location=@ViewData.GetCurrentPath()" class="button">Вход</a>
+            </p>
+        }
+    }
+</div>
+@if (@Model.price_changed) {
+    <span hx-swap-oob="true" id="lot-price" class="lot-price">@Model.lot.current_price</span>
+    <div hx-swap-oob="true" id="bid-history" class="bid-history">
+        @await Html.PartialAsync("bid_history", @Model.lot.bids)
+    </div>
+    @if (Model.lot.leader_login != null) {
+        <span hx-swap-oob="true" id="current-leader" class="value"><a href="/user/@(Model.lot.leader_login)">@Model.lot.leader_login</a></span>
+    } else {
+        <span hx-swap-oob="true" id="current-leader" class="value">Нет</span>
+    }
+}

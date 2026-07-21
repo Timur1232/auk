@@ -261,37 +261,93 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
         return cards;
     }
 
-    public async Task<(decimal new_price, string? err)> MakeBid(uint id, Lot.BidForm req, string user_login)
+    public string? ValidateBid(Lot? lot, decimal new_price, string user_login)
+    {
+        if (lot == null)
+            return "Лот не найден.";
+
+        if (lot.end_time <= DateTimeOffset.Now)
+            return "Лот закрыт для ставок.";
+
+        if (lot.user_login == user_login)
+            return "Вы не можете делать ставку на свой лот.";
+
+        if (new_price <= lot.current_price)
+            return "Ставка должна быть больше текущей цены.";
+
+        return null;
+    }
+
+    public async Task<(Lot? lot, string? err)> MakeBid(uint id, decimal new_price, string user_login)
     {
         var lot = await db.lots
             .Include(l => l.user)
+            .Include(l => l.bids)
             .FirstOrDefaultAsync(l => l.id == id);
 
-        if (lot == null)
-            return (0M, "Лот не найден.");
+        var error = ValidateBid(lot, new_price, user_login);
 
-        if (lot.end_time <= DateTimeOffset.Now)
-            return (0M, "Лот закрыт для ставок.");
-
-        if (lot.user_login == user_login)
-            return (0M, "Вы не можете делать ставку на свой лот.");
-
-        if (req.amount <= lot.current_price)
-            return (0M, "Ставка должна быть больше текущей цены.");
+        if (lot == null || error != null) {
+            return (lot, error);
+        }
 
         var bet = new Bid {
             user_login = user_login,
             lot_id = id,
-            price = req.amount
+            price = new_price
         };
 
-        db.bids.Add(bet);
-        lot.current_price = req.amount;
+        lot.bids.Add(bet);
+        lot.current_price = bet.price;
         lot.leader_login = user_login;
 
         if (!await db.TrySaveChangesAsync())
-            return (0M, "Ошибка сохранения ставки.");
+            return (lot, "Ошибка сохранения ставки.");
 
-        return (lot.current_price, null);
+        return (await db.lots.Include(l => l.user).Include(l => l.bids.OrderByDescending(b => b.id)).FirstOrDefaultAsync(l => l.id == id), null);
+    }
+
+    public async Task<(Lot? lot, string? err)> CancelLastBid(uint lot_id, string user_login)
+    {
+        var lot = await db.lots
+            .Include(l => l.user)
+            .Include(l => l.bids.OrderByDescending(b => b.id))
+            .FirstOrDefaultAsync(l => l.id == lot_id);
+
+        if (lot == null) {
+            return (lot, "Лот не найден.");
+        }
+
+        // TODO: this is not good. change
+        var error = ValidateBid(lot, lot.current_price+1, user_login);
+
+        if (error != null) {
+            return (lot, error);
+        }
+
+        var last_2_bid = lot.bids.Take(2).ToList();
+        if (last_2_bid.Count == 0) {
+            return (lot, "Ставок еще не сделано.");
+        }
+
+        var last_bid = last_2_bid.FirstOrDefault();
+
+        if (last_bid?.user_login != user_login) {
+            return (lot, "Нелегальная операция.");
+        }
+
+        lot.bids.Remove(last_bid);
+        lot.RecalculatePrice();
+
+        if (last_2_bid.Count > 1) {
+            lot.leader_login = last_2_bid.Last().user_login;
+        } else {
+            lot.leader_login = null;
+        }
+        if (!await db.TrySaveChangesAsync())
+            return (null, "Ошибка сохранения ставки.");
+
+
+        return (await db.lots.Include(l => l.user).Include(l => l.bids.OrderByDescending(b => b.id)).FirstOrDefaultAsync(l => l.id == lot_id), null);
     }
 }

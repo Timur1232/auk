@@ -22,7 +22,7 @@ public class PublicLotsController(AuctionDbContext db, IWebHostEnvironment env) 
         if (lot == null) return NotFound();
 
         var images = lot.images.ToList();
-        var seller = await db.GetUserByLogin(lot.user_login);
+        var seller = lot.user;
         var current_user = HttpContext.GetUser();
         var is_owner = current_user?.login == lot.user_login;
 
@@ -37,24 +37,57 @@ public class PublicLotsController(AuctionDbContext db, IWebHostEnvironment env) 
 
     [HttpPost("{id}/bid")]
     [Authorize, GetUserStrict]
-    public async Task<IActionResult> MakeBid([FromRoute] uint id, [FromForm] Lot.BidForm req)
+    public async Task<IActionResult> MakeBid([FromRoute] uint id, [FromForm] decimal new_price)
     {
         var user = HttpContext.GetUser()!;
-        var (new_price, error) = await model.MakeBid(id, req, user.login);
+        var (lot, error) = await model.MakeBid(id, new_price, user.login);
 
-        var form_data = new BidFormData {
-            lot_id = id,
+        if (lot == null) {
+            return NotFound();
+        }
+
+        var data = new LotDetailsViewModel {
+            lot = lot,
+            seller = lot.user,
+            images = lot.images.ToList(),
+            is_owner = user?.login == lot.user_login,
         };
 
         if (error != null) {
             ViewData["errors"] = error;
-            return View("bid_form", form_data);
+            return View("bid_maker", data);
         }
 
-        form_data.price = new_price;
-        form_data.price_changed = true;
+        data.price_changed = true;
 
-        return View("bid_form", form_data);
+        return View("bid_maker", data);
+    }
+
+    [HttpDelete("{lot_id}/bid")]
+    public async Task<IActionResult> CancelLastBid([FromRoute] uint lot_id)
+    {
+        var user = HttpContext.GetUser()!;
+        var (lot, error) = await model.CancelLastBid(lot_id, user.login);
+
+        if (lot == null) {
+            return NotFound();
+        }
+
+        var data = new LotDetailsViewModel {
+            lot = lot,
+            seller = lot.user,
+            images = lot.images.ToList(),
+            is_owner = user?.login == lot.user_login,
+        };
+
+        if (error != null || lot == null) {
+            ViewData["errors"] = error;
+            return View("bid_maker", data);
+        }
+
+        data.price_changed = true;
+
+        return View("bid_maker", data);
     }
 }
 
@@ -117,15 +150,56 @@ public class UserLotsController(AuctionDbContext db, IWebHostEnvironment env) : 
         return Ok();
     }
 
-    // [HttpPatch("{id}")]
-    // public async Task<IActionResult> UpdateById(uint id, [FromForm] Lot.CreateRequest req)
-    // {
-    //     var (updated_lot, err) = await model.UpdateById(id, req);
-    //     if (err != ModelError.None || updated_lot == null) {
-    //         Response.StatusCode = 400;
-    //         return Content(err.GetMessage());
-    //     }
-    //     return Ok(updated_lot);
-    // }
+    [HttpGet("{lot_id}/purchase")]
+    public async Task<IActionResult> PurchaseForm([FromRoute] uint lot_id)
+    {
+        var lot = await model.GetById(lot_id);
+        if (lot == null) {
+            return NotFound();
+        }
+        return View("purchase_form", lot);
+    }
 
+    [HttpPost("{lot_id}/purchase-submit")]
+    public async Task<IActionResult> PurchaseSubmit([FromRoute] uint lot_id)
+    {
+        var user = HttpContext.GetUser()!;
+        var lot = await model.GetById(lot_id);
+        if (lot == null) {
+            return NotFound();
+        }
+
+        var purchase = new Purchase {
+            user_login = user.login,
+            lot_id = lot_id,
+            locked_price = lot.current_price,
+        };
+        db.purchases.Add(purchase);
+
+        lot.status = LotStatus.Purchased.ToString();
+
+        if (!await db.TrySaveChangesAsync()) {
+            ViewData["errors"] = "Ошибка сохранения.";
+            return View("purchase_form", lot);
+        }
+        return Redirect("/user");
+    }
+
+    [HttpPost("{lot_id}/purchase-deny")]
+    public async Task<IActionResult> PurchaseDeny([FromRoute] uint lot_id)
+    {
+        var lot = await model.GetById(lot_id);
+        if (lot == null) {
+            return NotFound();
+        }
+
+        lot.status = LotStatus.Denied.ToString();
+
+        if (!await db.TrySaveChangesAsync()) {
+            ViewData["errors"] = "Ошибка сохранения.";
+            return View("purchase_form", lot);
+        }
+
+        return Redirect("/user");
+    }
 }

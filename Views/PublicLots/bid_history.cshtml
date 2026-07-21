@@ -1,0 +1,16 @@
+@model ICollection<App.Models.Bid>;
+
+<h3>История ставок</h3>
+@if (Model.Count <= 0) {
+    <p>Ставки пока никто не делал.</p>
+} else {
+    <div class="bid-history-list">
+        @foreach (var (index, bid) in Model.OrderByDescending(b => b.id).Index()) {
+            <div class="bid-history-item">
+                <span class="bid-history-item-index @(index == 0 ? "highlight" : "")">@(index+1).</span>
+                <a class="bid-history-item-user @(index == 0 ? "highlight" : "")" href="/user/@(bid.user_login)">@(bid.user_login)</a>
+                <span class="lot-price @(index == 0 ? "highlight" : "")">@(bid.price)</span>
+            </div>
+        }
+    </div>
+}

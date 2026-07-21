@@ -2,7 +2,7 @@
 @using App.Extentions;
 @{
     var current_path = ViewData.GetCurrentPath();
-    var user = ViewData["user"] as User;
+    var user = ViewData.GetUser();
 }
 
 <nav class="header-nav">
@@ -17,7 +17,7 @@
         </li>
         @if (user != null) {
             <li class="header-link hover-shadow">
-                <a href="/user" class="@(current_path == "/user" ? "link-decor" : null)">
+                <a href="/user" class="@(current_path == "/user/"+user?.login ? "link-decor" : null)">
                     Аккаунт
                 </a>
             </li>

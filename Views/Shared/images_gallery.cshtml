@@ -1,0 +1,40 @@
+@model List<App.Models.LotImage>;
+@{
+    var first_image = Model.FirstOrDefault();
+}
+
+<div class="gallery">
+    <div class="main-image-container">
+        <img id="mainImage"
+             src="@(first_image?.image_path ?? "/images/no-image.png")"
+             alt="Главное изображение" />
+    </div>
+    <div class="thumbnails-container">
+        @if (Model.Count > 1) {
+            foreach (var img in Model) {
+                <div class="thumbnail-item @(img == first_image ? "active" : "")"
+                     data-image="@img.image_path">
+                    <img src="@img.image_path" alt="Миниатюра" />
+                </div>
+            }
+        }
+    </div>
+    <script>
+        (function (){
+            const images = ultra.by_selector_all('.thumbnail-item');
+            for (const i of images) {
+                i.$on_click(function() {
+                    const main_img = ultra.by_id('mainImage');
+                    const src = this.dataset.image;
+                    if (src) {
+                        main_img.src = src;
+                        for (const i of images) {
+                            i.$class_remove('active');
+                        }
+                        ultra.from_dom(this).$class('active');
+                    }
+                });
+            }
+        })();
+    </script>
+</div>

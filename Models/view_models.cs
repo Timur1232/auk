@@ -34,6 +34,7 @@ public class LotDetailsViewModel
     public List<LotImage> images = new();
     public User? seller;
     public bool is_owner;
+    public bool price_changed = false;
 }
 
 public class UserInfoData
@@ -42,28 +43,10 @@ public class UserInfoData
     public List<UserLotCard> lots = new();
 }
 
-public class UserBetCard
-{
-    public uint lot_id;
-    public string title = null!;
-    public string? thumbnail_path;
-    public DateTimeOffset end_time;
-    public decimal bet_price;
-    public decimal current_price;
-    public bool is_leader;
-}
-
 public class UserLotCard
 {
     public uint id;
     public string title = null!;
     public decimal current_price;
     public string? thumbnail_path;
-}
-
-public class BidFormData
-{
-    public uint lot_id;
-    public decimal price;
-    public bool price_changed = false;
 }

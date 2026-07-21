@@ -1,7 +1,7 @@
 @using App.Extentions;
 @model App.Models.UserInfoData;
 @{
-    var user = ViewData.GetUser();
+    var user = ViewData.GetUser()!;
     var this_user = user != null && user.login == Model.user_login;
 }
 

@@ -1,6 +1,9 @@
-@model List<App.Models.UserBetCard>
+@using App.Extentions;
+@using App.Models;
+@model List<App.Models.Bid>
 @{
     var rendered_lots = new List<uint>();
+    var user = ViewData.GetUser()!;
 }
 
 @if (Model.Count == 0) {
@@ -8,33 +11,43 @@
 } else {
     <div class="user-list">
         @foreach (var bet in Model) {
-            @if (rendered_lots.Contains(bet.lot_id)) {
+            @if (rendered_lots.Contains(bet.lot.id)) {
                 continue;
             } else {
-                rendered_lots.Add(bet.lot_id);
+                rendered_lots.Add(bet.lot.id);
             }
             <div class="user-list-item" onclick="ultra.from_dom(this).$by_selector('.user-item-info a').click()">
                 <div class="user-item-thumb">
-                    <img src="@(bet.thumbnail_path ?? "/images/no-image.png")" alt="" />
+                    <img src="@(bet.lot.FirstImage()?.image_path ?? "/images/no-image.png")" alt="" />
                 </div>
                 <div class="user-item-info">
-                    <a href="/lots/@bet.lot_id">@bet.title</a>
+                    <a href="/lots/@bet.lot.id">@bet.lot.title</a>
                 </div>
-                @if (bet.is_leader) {
-                    <span class="leader-badge">Вы лидер</span>
+                @if (bet.lot.leader_login == user.login) {
+                    @if (bet.lot.closed) {
+                        @if (bet.lot.status == LotStatus.WaitingPurchaseConfirm.ToString()) {
+                            <span class="leader-badge">Вы победили</span>
+                        } else if (bet.lot.status == LotStatus.Purchased.ToString()) {
+                            <span class="leader-badge">Выкуплен</span>
+                        } else {
+                            <span class="outbid-badge">Отказ</span>
+                        }
+                    } else {
+                        <span class="leader-badge">Вы лидер</span>
+                    }
                 } else {
                     <div class="outdib">
                         <span class="outbid-badge">Вас перебили</span>
                         <span class="outbid-price">Текущая цена: </span>
-                        <span class="lot-price">@bet.current_price</span>
+                        <span class="lot-price">@bet.lot.current_price</span>
                     </div>
                 }
                 <div class="user-item-price">
                     <span class="price-label">Ваша ставка: </span>
-                    <span class="lot-price">@bet.bet_price</span>
+                    <span class="lot-price">@bet.price</span>
                 </div>
                 <div class="user-item-end">
-                    Окончание: @bet.end_time.ToString("g")
+                    Окончание: @bet.lot.end_time.ToString("g")
                 </div>
             </div>
         }

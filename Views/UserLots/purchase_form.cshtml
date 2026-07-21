@@ -1,0 +1,36 @@
+@model App.Models.Lot;
+
+<div class="form form-narrow">
+    <div class="purchase-info">
+        <h1>Покупка лота</h1>
+        <h2>@Model.title</h2>
+        <p>Конечная цена: <span class="lot-price">@Model.current_price</span></p>
+        <div class="seller-info">
+            <span class="label">Продавец:</span>
+            <a href="/user/@Model.user?.login">@(Model.user?.login ?? "Неизвестно")</a>
+        </div>
+        <hr>
+        <h3>Описание</h3>
+        @if (@Model.description != null) {
+            <p>@Model.description</p>
+        } else {
+            <p>Описания нет.</p>
+        }
+        <hr>
+        <h2>Фото товара</h2>
+        @await Html.PartialAsync("images_gallery", Model.images)
+
+        @await Html.PartialAsync("lot_meta", Model)
+    </div>
+
+    <hr>
+
+    <div hx-confirm="Вы уверены?">
+        <button type="submit" class="form-submit"
+            hx-post="/lots/my/@Model.id/purchase-submit"
+        >Согласиться</button>
+        <button type="reset" class="form-reset"
+            hx-post="/lots/my/@Model.id/purchase-deny"
+        >Отклонить</button>
+    </div>
+</div>
