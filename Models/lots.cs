@@ -165,7 +165,7 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
         return (lot, errors);
     }
 
-    public async Task SaveLotImagesFiles(Lot lot, IFormFile? thumbnail, IFormFileCollection? images, string uploads_path)
+    public static async Task SaveLotImagesFiles(Lot lot, IFormFile? thumbnail, IFormFileCollection? images, string uploads_path)
     {
         var images_to_save = new List<IFormFile>();
         if (thumbnail != null) images_to_save.Add(thumbnail);
@@ -189,7 +189,7 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
         }
     }
 
-    public async Task DeleteLotImagesFiles(ICollection<LotImage> images, string uploads_path)
+    public static async Task DeleteLotImagesFiles(ICollection<LotImage> images, string uploads_path)
     {
         foreach (var img in images) {
             var file_name = Path.GetFileName(img.image_path);

@@ -1,0 +1,40 @@
+@using App.Models;
+@model App.Models.AdminPageModel;
+
+<div class="content-container">
+    <h1>Управление категориями</h1>
+
+    <div class="admin-controls">
+        <div class="search-bar">
+            <input class="form-like" type="text" id="admin-search" placeholder="Поиск категорий..."
+                   value="@Model.Search"
+                   hx-get="/admin"
+                   hx-trigger="input changed delay:300ms"
+                   hx-target="#tag-list-container"
+                   hx-push-url="true"
+                   hx-vals='js:{search: this.value}' />
+            <button class="button" id="show-create-form">Создать категорию</button>
+        </div>
+    </div>
+
+    <div id="tag-form-container" style="display: none;">
+        @await Html.PartialAsync("tag_form", Model)
+    </div>
+
+    <div id="tag-list-container">
+        @await Html.PartialAsync("tag_list", Model)
+    </div>
+</div>
+
+<script>
+    document.getElementById('show-create-form').addEventListener('click', function() {
+        const container = document.getElementById('tag-form-container');
+        if (container.style.display === 'none') {
+            container.style.display = 'block';
+            this.textContent = 'Скрыть форму';
+        } else {
+            container.style.display = 'none';
+            this.textContent = 'Создать категорию';
+        }
+    });
+</script>

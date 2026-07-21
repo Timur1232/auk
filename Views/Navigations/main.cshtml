@@ -16,6 +16,13 @@
             </a>
         </li>
         @if (user != null) {
+            @if (user.is_admin) {
+                <li class="header-link hover-shadow">
+                    <a href="/admin" class="@(current_path == "/admin" ? "link-decor" : null)">
+                        Админ
+                    </a>
+                </li>
+            }
             <li class="header-link hover-shadow">
                 <a href="/user" class="@(current_path == "/user/"+user?.login ? "link-decor" : null)">
                     Аккаунт

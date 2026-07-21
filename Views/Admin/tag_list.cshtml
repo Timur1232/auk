@@ -1,0 +1,11 @@
+@model App.Models.AdminPageModel
+
+@if (Model.Tags.Count == 0) {
+    <p>Категории не найдены.</p>
+} else {
+    <div class="user-list tag-admin-list">
+        @foreach (var tag in Model.Tags) {
+            @await Html.PartialAsync("tag_item", tag)
+        }
+    </div>
+}

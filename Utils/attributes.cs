@@ -8,14 +8,25 @@ using App.Extentions;
 
 namespace App.Attributes;
 
-public class GetUserOpt(bool strict) : ActionFilterAttribute
+public class GetUserOpt(GetUserOpt.Opt opt) : ActionFilterAttribute
 {
+    public enum Opt {
+        None,
+        Strict,
+        Admin,
+    }
+
     public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         var db = context.HttpContext.RequestServices.GetRequiredService<AuctionDbContext>();
         var user = await db.GetUserByClaims(context.HttpContext.User);
 
-        if (strict && user == null) {
+        if (opt == Opt.Strict && user == null) {
+            context.Result = new UnauthorizedResult();
+            return;
+        }
+
+        if (opt == Opt.Admin && (user == null || !user.is_admin)) {
             context.Result = new UnauthorizedResult();
             return;
         }
@@ -32,12 +43,17 @@ public class GetUserOpt(bool strict) : ActionFilterAttribute
 
 public class GetUser : GetUserOpt
 {
-    public GetUser() : base(false) {}
+    public GetUser() : base(GetUserOpt.Opt.None) {}
 }
 
 public class GetUserStrict : GetUserOpt
 {
-    public GetUserStrict() : base(true) {}
+    public GetUserStrict() : base(GetUserOpt.Opt.Strict) {}
+}
+
+public class GetUserAdmin : GetUserOpt
+{
+    public GetUserAdmin() : base(GetUserOpt.Opt.Admin) {}
 }
 
 // Supporting only russian for now

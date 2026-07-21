@@ -1,0 +1,26 @@
+@model App.Models.AdminPageModel
+
+@if (Model.Success) {
+    <div id="tag-list-container" hx-swap-oob="true">
+        @await Html.PartialAsync("tag_list", Model)
+    </div>
+}
+
+<form class="form" method="post" action="/admin"
+      hx-post="/admin"
+      hx-target="this"
+      hx-swap="outerHTML"
+      hx-on::after-request="this.reset()">
+    <div class="form-field">
+        <label for="tag-name">Название категории</label>
+        <input class="form-like" id="tag-name" name="name" type="text" required/>
+    </div>
+    <button class="form-submit" type="submit">Создать</button>
+    <div id="create-errors">
+        @if (Model.Success) {
+            @await Html.PartialAsync("good_results")
+        } else {
+            @await Html.PartialAsync("errors")
+        }
+    </div>
+</form>

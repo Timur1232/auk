@@ -1,0 +1,20 @@
+@model App.Models.Tag
+
+<div class="user-list-item" id="tag-row-@Model.id">
+    <div class="user-item-info" style="flex:1;">
+        <span style="flex:1;">@Model.id. @Model.name</span>
+    </div>
+    <div class="user-item-actions">
+        <button class="edit-btn" hx-get="/admin/@Model.id/edit-form"
+                hx-target="#tag-row-@Model.id"
+                hx-swap="outerHTML">
+            Редактировать
+        </button>
+        <button class="delete-btn" hx-delete="/admin/@Model.id"
+                hx-target="#tag-row-@Model.id"
+                hx-swap="outerHTML"
+                hx-confirm="Удалить категорию?">
+            Удалить
+        </button>
+    </div>
+</div>

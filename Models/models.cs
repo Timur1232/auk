@@ -10,6 +10,8 @@ public class User
     [EmailAddress] public required string? email {get; set;}
     [Required]     public required string password_hash {get; set;}
 
+    public bool is_admin {get; set;} = false;
+
     [InverseProperty(nameof(Lot.user))]
     public ICollection<Lot> lots {get; set;} = new List<Lot>();
     [InverseProperty(nameof(Bid.user))]
@@ -185,6 +187,7 @@ public class Tag
     [Required] public string name {get; set;} = null!;
 
     public record CreateRequest(string name);
+    public record UpdateRequest(string name);
 
     public static Tag From(CreateRequest req)
     {

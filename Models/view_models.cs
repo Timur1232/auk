@@ -63,3 +63,17 @@ public class UserLotCard
     public decimal current_price;
     public string? thumbnail_path;
 }
+
+public class AdminPageModel
+{
+    public List<Tag> Tags { get; set; } = new();
+    public string? Search { get; set; }
+    public bool Success { get; set; }
+}
+
+public class TagEditForm
+{
+    public uint TagId { get; set; }
+    public string Name {get; set;} = null!;
+    public bool Success {get; set;}
+}
