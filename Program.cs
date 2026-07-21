@@ -25,6 +25,7 @@ builder.Services.AddDbContext<AuctionDbContext>(opt => {
 
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddHostedService<AuctionClosingService>();
+builder.Services.AddHostedService<OrphanImagesKiller>();
 builder.Services.AddScoped<PasswordHasher>();
 
 builder.Services.AddAuthorizationBuilder()
