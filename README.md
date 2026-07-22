@@ -58,6 +58,11 @@ vim appsettings.json
 psql -h localhost -p 5432 -U postgres -d auk
 ```
 
+Загрузите зависимости:
+```
+dotnet restore
+```
+
 Запустите приложение:
 ```
 dotnet run
