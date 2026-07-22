@@ -7,7 +7,28 @@
 }
 
 <div class="lot-meta">
-    <p><span class="label">Лот закрылся:</span> <span class="value">@Model.end_time.ToString("g")</span></p>
+    <p>
+        @if (Model.closed) {
+            <span class="label">Победитель:</span>
+        } else {
+            <span class="label">Лидер:</span>
+        }
+        <span id="current-leader" class="value">
+            @if (Model.leader_login != null) {
+                <a href="/user/@(Model.leader_login)">@Model.leader_login@Html.Raw(".")</a>
+            } else {
+                @Html.Raw("Нет.")
+            }
+        </span>
+    </p>
+    <p>
+        @if (Model.closed) {
+            <span class="label">Лот закрылся:</span>
+        } else {
+            <span class="label">Лот закроется:</span>
+        }
+        <span class="value">@Model.end_time.ToString("g")</span>
+    </p>
     <p><span class="label">Местоположения:</span> <span class="value">@Model.city</span></p>
     <p><span class="label">Начальная цена:</span> <span class="value">@Model.initial_price ₽</span></p>
     <p><span class="label">Количество:</span> <span class="value">@Model.count</span></p>
