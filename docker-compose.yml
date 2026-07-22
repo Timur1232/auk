@@ -19,9 +19,8 @@ services:
   app:
     build: .
     container_name: auction-app
-    # environment:
-      # ASPNETCORE_ENVIRONMENT: "Development"
-      # - ConnectionStrings__db_conn=Host=db;Port=5432;Database=auk;Username=postgres;Password=postgres
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
     ports:
       - "8080:8080"
     depends_on:
