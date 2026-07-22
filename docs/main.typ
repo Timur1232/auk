@@ -2,6 +2,8 @@
 #import "typst_templates/uni.typ": *
 #show: uni_style
 
+#set page(numbering: "1", number-align: top + center)
+
 #section_head(numbering: false)[СОДЕРЖАНИЕ]
 
 #outline(title: none)
@@ -446,7 +448,7 @@ Docker.
 #set page(flipped: false)
 
 #pagebreak()
-#section_head(numbering: false)[ПРИЛОЖЕНИЕ Б. Исходный код приложения] <appendix_b>
+#section_head(numbering: false)[ПРИЛОЖЕНИЕ Б. Скриншоты веб-сайта] <appendix_b>
 
 #figi("login.png",           [Форма входа], width: 60%)
 #figi("register.png",        [Форма регистрации])

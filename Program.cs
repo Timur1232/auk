@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using App;
 using App.Services;
 using App.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -19,7 +18,7 @@ builder.Services.AddDbContext<AuctionDbContext>(opt => {
     if (builder.Environment.IsDevelopment()) {
         opt.UseSqlite(conn_string);
     } else {
-        G.Todo("Add server db (like postgres or mysql) for production");
+        opt.UseNpgsql(conn_string);
     }
 });
 
@@ -58,6 +57,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope()) {
+    var db = scope.ServiceProvider.GetRequiredService<AuctionDbContext>();
+    await db.Database.MigrateAsync();
+}
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
