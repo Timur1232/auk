@@ -17,7 +17,7 @@ Auk -- это веб-платформа для проведения аукцио
 
 # Технологии
 
-- [ASP.NET Core Web API](https://dotnet.microsoft.com/en-us/apps/aspnet) - основной фреймворк для API
+- [ASP.NET Core](https://dotnet.microsoft.com/en-us/apps/aspnet) - основной фреймворк для API
 - [Entity Framework Core](https://learn.microsoft.com/en-us/ef/core/get-started/overview/first-app?tabs=netcore-cli) - ORM для работы с базой данных
 - [JWT](https://www.jwt.io/introduction#what-is-json-web-token) - аутентификация пользователей
 - [Docker](https://docs.docker.com/get-started/) - контейнеризация приложения
