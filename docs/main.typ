@@ -1,6 +1,17 @@
 #import "helpers.typ": *
 #import "typst_templates/uni.typ": *
+#import "typst_templates/practice_front_page.typ": *
 #show: uni_style
+
+#practice_front_page(
+  SOLARLAB,
+  my_name,
+  my_group,
+  MY_COURSE_CODE,
+  MY_COURSE_NAME,
+  MY_SUPERVISOR.at(0),
+  MY_SUPERVISOR.at(1),
+)
 
 #set page(numbering: "1", number-align: top + center)
 
@@ -474,8 +485,11 @@ Docker.
 #pagebreak()
 #section_head(numbering: false)[ПРИЛОЖЕНИЕ В. Исходный код приложения] <appendix_d>
 
+// Need up-ln symlinc to compile
+// ```
+// ln -s ../ up-ln
+// ```
 #listing_code_file("./up-ln/Program.cs")
-#listing_code_file("./up-ln/Views/Auth/register.cshtml")
 #listing_code_file("./up-ln/Config.cs")
 #listing_code_file("./up-ln/Controllers/auth.cs")
 #listing_code_file("./up-ln/Controllers/user.cs")
@@ -498,6 +512,7 @@ Docker.
 #listing_code_file("./up-ln/Utils/extentions.cs")
 #listing_code_file("./up-ln/Utils/attributes.cs")
 #listing_code_file("./up-ln/Views/Auth/login.cshtml")
+#listing_code_file("./up-ln/Views/Auth/register.cshtml")
 #listing_code_file("./up-ln/Views/Layouts/main.cshtml")
 #listing_code_file("./up-ln/Views/Shared/User/user_info.cshtml")
 #listing_code_file("./up-ln/Views/Shared/User/user_lots.cshtml")
