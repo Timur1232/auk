@@ -658,6 +658,10 @@ header {
     font-weight: bold;
     color: var(--color-text);
     flex-grow: 1;
+
+    word-wrap: none;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 .user-item-info .lot-price {
     font-size: 1.2rem;
