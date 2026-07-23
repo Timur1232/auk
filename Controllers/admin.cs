@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using App.Models;
+using App.Helpers;
 using App.Attributes;
 using App.Extentions;
 namespace App.Controllers;
@@ -32,7 +33,7 @@ public class AdminController(AuctionDbContext db) : Controller
         var data = new AdminPageData { search = search };
 
         if (errors.Count > 0 || tag == null) {
-            ViewData["errors"] = errors;
+            ViewData.SetResults(ViewMessage.MapCollectionError(errors, TagsModel.ErrorToString));
             return View("tag_form", data);
         }
 
@@ -48,10 +49,12 @@ public class AdminController(AuctionDbContext db) : Controller
     public async Task<IActionResult> DeleteTag([FromRoute] uint tag_id)
     {
         var (tag, err) = await tags_model.DeleteById(tag_id);
-        if (err != ModelError.None || tag == null) {
+        if (err != TagsModel.Error.None || tag == null) {
             Response.StatusCode = 400;
-            Log.Error(err.GetMessage());
-            return Content(err.GetMessage());
+            var err_msg = TagsModel.ErrorToString(err);
+            Log.Error(err_msg);
+            ViewData.SetResults(ViewMessage.Error(err_msg));
+            return View("results");
         }
         return Ok();
     }
@@ -61,7 +64,7 @@ public class AdminController(AuctionDbContext db) : Controller
     {
         var (updated_tag, errors) = await tags_model.UpdateById(tag_id, req);
         if (errors.Count > 0 || updated_tag == null) {
-            ViewData["errors"] = errors;
+            ViewData.SetResults(ViewMessage.MapCollectionError(errors, TagsModel.ErrorToString));
             return View("tag_edit_form", new AdminPageData { success = false, search = search });
         }
         return View("tag_item", updated_tag);

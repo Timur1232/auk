@@ -28,10 +28,24 @@ public static class MyExtentions
 
         public void SetUser(User user) => view_data["user"] = user;
         public User? GetUser() => view_data["user"] as User;
+
+        public void SetResults(List<ViewMessage> results) => view_data["results"] = results;
+        public void SetResults(ViewMessage result) => view_data["results"] = result;
+        public List<ViewMessage> GetResults()
+        {
+            var obj = view_data["results"];
+            if (obj is List<ViewMessage> rs) {
+                return rs;
+            } else if (obj is ViewMessage r) {
+                return new List<ViewMessage>([r]);
+            } else {
+                return new List<ViewMessage>();
+            }
+        }
     }
 }
 
-public static class EnumExt
+public static class EnumExtentions
 {
     extension (PaymentMethod p) {
         public string GetDescription()

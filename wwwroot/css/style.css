@@ -918,3 +918,9 @@ header {
 .page-info {
     color: var(--color-text2);
 }
+
+/* ===============================[Admin tags edit]============================= */
+
+.form.tag {
+    margin: 0;
+}

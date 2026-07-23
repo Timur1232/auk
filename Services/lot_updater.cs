@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using App.Models;
+using App.Helpers;
 namespace App.Services;
 
 public class AuctionClosingService(IServiceScopeFactory scope_factory) : BackgroundService

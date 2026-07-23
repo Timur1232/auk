@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using App.Attributes;
 using App.Models;
+using App.Helpers;
 using App.Services;
 using App.Extentions;
 
@@ -27,11 +28,11 @@ public class AuthController(
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromForm] User.LoginRequest login_req)
     {
-        (User? user, AuthModel.Error err) = await model.ValidateLoginForm(login_req);
+        var (user, err) = await model.ValidateLoginForm(login_req);
 
         if (err != AuthModel.Error.None || user == null) {
-            ViewData["errors"] = AuthModel.ErrorToString(err);
-            if (Request.IsHtmx()) return View("errors");
+            ViewData.SetResults(ViewMessage.Error(AuthModel.ErrorToString(err)));
+            if (Request.IsHtmx()) return View("results");
             return View("login");
         }
 
@@ -50,11 +51,11 @@ public class AuthController(
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromForm] User.RegisterRequest register_req)
     {
-        (User? new_user, List<AuthModel.Error> errors) = await model.RegisterNewUser(register_req);
+        var (new_user, errors) = await model.RegisterNewUser(register_req);
 
         if (errors.Count > 0 || new_user == null) {
-            ViewData["errors"] = errors.Select(AuthModel.ErrorToString);
-            if (Request.IsHtmx()) return View("errors");
+            ViewData.SetResults(ViewMessage.MapCollectionError(errors, AuthModel.ErrorToString));
+            if (Request.IsHtmx()) return View("results");
             return View("register");
         }
 
@@ -72,8 +73,8 @@ public class AuthController(
     public async Task<IActionResult> LoginCheckUserExists([FromForm] string? login_or_email)
     {
         if (!await model.IsUserExists(login_or_email)) {
-            ViewData["errors"] = AuthModel.ErrorToString(AuthModel.Error.UserNotExists);
-            return View("errors");
+            ViewData.SetResults(ViewMessage.Error(AuthModel.ErrorToString(AuthModel.Error.UserNotExists)));
+            return View("results");
         }
         return Ok();
     }
@@ -88,8 +89,8 @@ public class AuthController(
         ));
 
         if (errors.Count > 0) {
-            ViewData["errors"] = errors.Select(AuthModel.ErrorToString);
-            return View("errors");
+            ViewData.SetResults(ViewMessage.MapCollectionError(errors, AuthModel.ErrorToString));
+            return View("erri");
         }
 
         return Ok();

@@ -1,19 +1,59 @@
 using Microsoft.EntityFrameworkCore;
 namespace App.Models;
 
-public class Aboba : ICloneable
-{
-    public Lot lot = null!;
-
-    public object Clone()
-    {
-        return this.MemberwiseClone();
-    }
-}
-
 public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
 {
     public const int DEFAULT_PAGE_SIZE = 15;
+
+    public enum Error {
+        None,
+        DbError,
+
+        NotExists,
+        LotClosed,
+        OwnLot,
+        PriceLess,
+        NoBids,
+        IllegalOperaion,
+
+        TitleEmpty,
+        CountLessThanOne,
+        PriceNegative,
+        EndTimeInPast,
+        TagNotExists,
+        NoImages,
+        NoCity,
+        NoPaymentMethod,
+        PaymentNotSupported,
+        NoDeliveryPayment,
+    }
+
+    public static string ErrorToString(Error err)
+    {
+        return err switch {
+            Error.None                => "",
+            Error.DbError             => "Ошибка сохранения в базе данных.",
+
+            Error.NotExists           => "Лота не существует.",
+            Error.LotClosed           => "Лот закрыт для ставок.",
+            Error.OwnLot              => "Вы не можете делать ставку на свой лот.",
+            Error.PriceLess           => "Ставка должна быть больше текущей цены.",
+            Error.NoBids              => "Ставок еще не сделано.",
+            Error.IllegalOperaion     => "Нелегальная операция.",
+
+            Error.TitleEmpty          => "Название не может быть пустым.",
+            Error.CountLessThanOne    => "Количество должно быть не меньше 1.",
+            Error.PriceNegative       => "Цена должна быть положительной.",
+            Error.EndTimeInPast       => "Дата окончания должна быть в будущем.",
+            Error.TagNotExists        => "Выбранная категория не существует.",
+            Error.NoImages            => "Необходимо добавить хотя бы одно изображение.",
+            Error.NoCity              => "Необходимо указать город.",
+            Error.NoPaymentMethod     => "Необходимо указать способ оплаты.",
+            Error.PaymentNotSupported => "Способ оплаты не поддерживается.",
+            Error.NoDeliveryPayment   => "Необходимо указать, кто оплачивает доставку.",
+            _ => G.Unreachable<string>(nameof(LotsModel.Error)),
+        };
+    }
 
     public async Task<Lot?> GetById(uint id)
     {
@@ -111,11 +151,11 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
             .Include(l => l.images);
     }
 
-    public async Task<(Lot? deleted_lot, ModelError err)> DeleteById(uint id)
+    public async Task<(Lot? deleted_lot, Error err)> DeleteById(uint id)
     {
         var lot = await GetById(id);
         if (lot == null) {
-            return (null, ModelError.NotExist);
+            return (null, Error.NotExists);
         }
 
         var images = lot.images;
@@ -124,20 +164,20 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
 
         db.lots.Remove(lot);
         if (!await db.TrySaveChangesAsync()) {
-            return (null, ModelError.DbError);
+            return (null, Error.DbError);
         }
 
-        return (lot, ModelError.None);
+        return (lot, Error.None);
     }
 
-    public async Task<(Lot? updated_lot, List<string> errors)> UpdateById(uint id, Lot.EditRequest req)
+    public async Task<(Lot? updated_lot, List<Error> errors)> UpdateById(uint id, Lot.EditRequest req)
     {
         var errors = Validate.AllEdit(req, db);
         if (errors.Count > 0) return (null, errors);
 
         var lot = await db.lots.Include(l => l.images).FirstOrDefaultAsync(l => l.id == id);
         if (lot == null) {
-            errors.Add("Лота не существует.");
+            errors.Add(Error.NotExists);
             return (null, errors);
         }
 
@@ -150,7 +190,7 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
 
         db.lot_images.RemoveRange(lot.images);
         if (!await db.TrySaveChangesAsync()) {
-            errors.Add("Ошибка сохранения в базе данных.");
+            errors.Add(Error.DbError);
             return (null, errors);
         }
 
@@ -158,7 +198,7 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
         await SaveLotImagesFiles(lot, req.thumbnail, req.images, uploads_path);
 
         if (!await db.TrySaveChangesAsync()) {
-            errors.Add("Ошибка сохранения в базе данных.");
+            errors.Add(Error.DbError);
             return (null, errors);
         }
 
@@ -200,7 +240,7 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
         }
     }
 
-    public async Task<(Lot? lot, List<string> errors)> CreateLot(Lot.CreateRequest req, string user_login)
+    public async Task<(Lot? lot, List<Error> errors)> CreateLot(Lot.CreateRequest req, string user_login)
     {
         var errors = Validate.AllCreate(req, db);
         if (errors.Count > 0) return (null, errors);
@@ -216,7 +256,7 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
             db.lots.Add(lot);
         }
         if (!await db.TrySaveChangesAsync()) {
-            errors.Add("Ошибка сохранения в базу данных.");
+            errors.Add(Error.DbError);
             foreach (var img in lot.images) {
                 var file_name = Path.GetFileName(img.image_path);
                 var file_path = Path.Combine(uploads_path, file_name);
@@ -232,9 +272,9 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
 
     public static class Validate
     {
-        public static List<string> AllCreate(Lot.CreateRequest req, AuctionDbContext db)
+        public static List<Error> AllCreate(Lot.CreateRequest req, AuctionDbContext db)
         {
-            var errors = new List<string>();
+            var errors = new List<Error>();
             Title(req.title, ref errors);
             Count(req.count, ref errors);
             Price(req.price, ref errors);
@@ -247,9 +287,9 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
             return errors;
         }
 
-        public static List<string> AllEdit(Lot.EditRequest req, AuctionDbContext db)
+        public static List<Error> AllEdit(Lot.EditRequest req, AuctionDbContext db)
         {
-            var errors = new List<string>();
+            var errors = new List<Error>();
             Title(req.title, ref errors);
             Count(req.count, ref errors);
             EndTime(req.end_time, ref errors);
@@ -261,62 +301,60 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
             return errors;
         }
 
-        public static void Title(string? title, ref List<string> errors)
+        public static void Title(string? title, ref List<Error> errors)
         {
             if (string.IsNullOrWhiteSpace(title))
-                errors.Add("Название не может быть пустым.");
+                errors.Add(Error.TitleEmpty);
         }
 
-        public static void Count(int? count, ref List<string> errors)
+        public static void Count(int? count, ref List<Error> errors)
         {
             if (count == null || count < 1)
-                errors.Add("Количество должно быть не меньше 1.");
+                errors.Add(Error.CountLessThanOne);
         }
 
-        public static void Price(decimal? price, ref List<string> errors)
+        public static void Price(decimal? price, ref List<Error> errors)
         {
             if (price == null || price <= 0)
-                errors.Add("Цена должна быть положительной.");
+                errors.Add(Error.PriceNegative);
         }
 
-        public static void EndTime(DateTimeOffset? end_time, ref List<string> errors)
+        public static void EndTime(DateTimeOffset? end_time, ref List<Error> errors)
         {
             if (end_time == null || end_time <= DateTimeOffset.Now)
-                errors.Add("Дата окончания должна быть в будущем.");
+                errors.Add(Error.EndTimeInPast);
         }
 
-        public static void TagExists(uint? tag_id, AuctionDbContext db, ref List<string> errors)
+        public static void TagExists(uint? tag_id, AuctionDbContext db, ref List<Error> errors)
         {
-            const string msg = "Выбранная категория не существует.";
-
             if (tag_id == null) {
-                errors.Add(msg);
+                errors.Add(Error.TagNotExists);
                 return;
             }
 
             var tag_exists = db.tags.Any(t => t.id == tag_id);
             if (!tag_exists) {
-                errors.Add(msg);
+                errors.Add(Error.TagNotExists);
                 return;
             }
         }
 
-        public static void Images(IFormFile? thumbnail, IFormFileCollection? images, ref List<string> errors)
+        public static void Images(IFormFile? thumbnail, IFormFileCollection? images, ref List<Error> errors)
         {
             if (thumbnail == null && (images == null || images.Count == 0))
-                errors.Add("Необходимо добавить хотя бы одно изображение.");
+                errors.Add(Error.NoImages);
         }
 
-        public static void City(string? city, ref List<string> errors)
+        public static void City(string? city, ref List<Error> errors)
         {
             if (string.IsNullOrEmpty(city))
-                errors.Add("Необходимо указать город.");
+                errors.Add(Error.NoCity);
         }
 
-        public static void PaymentMethod(string? payment_method, ref List<string> errors)
+        public static void PaymentMethod(string? payment_method, ref List<Error> errors)
         {
             if (string.IsNullOrEmpty(payment_method)) {
-                errors.Add("Необходимо указать способ оплаты.");
+                errors.Add(Error.NoPaymentMethod);
                 return;
             }
             bool ok = false;
@@ -327,14 +365,14 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
                 }
             }
             if (!ok) {
-                errors.Add($"Способ оплаты не поддерживается.");
+                errors.Add(Error.PaymentNotSupported);
             }
         }
 
-        public static void DeliveryPayment(string? delivery_payment, ref List<string> errors)
+        public static void DeliveryPayment(string? delivery_payment, ref List<Error> errors)
         {
             if (string.IsNullOrEmpty(delivery_payment)) {
-                errors.Add("Необходимо указать, кто оплачивает доставку.");
+                errors.Add(Error.NoDeliveryPayment);
                 return;
             }
             bool ok = false;
@@ -345,7 +383,7 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
                 }
             }
             if (!ok) {
-                errors.Add($"Вариант оплаты {delivery_payment} не поддерживается.");
+                errors.Add(Error.PaymentNotSupported);
             }
         }
     }
@@ -378,24 +416,24 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
         return cards;
     }
 
-    public string? ValidateBid(Lot? lot, decimal new_price, string user_login)
+    public Error ValidateBid(Lot? lot, decimal new_price, string user_login)
     {
         if (lot == null)
-            return "Лот не найден.";
+            return Error.NotExists;
 
         if (lot.end_time <= DateTimeOffset.Now)
-            return "Лот закрыт для ставок.";
+            return Error.LotClosed;
 
         if (lot.user_login == user_login)
-            return "Вы не можете делать ставку на свой лот.";
+            return Error.OwnLot;
 
         if (new_price <= lot.current_price)
-            return "Ставка должна быть больше текущей цены.";
+            return Error.PriceLess;
 
-        return null;
+        return Error.None;
     }
 
-    public async Task<(Lot? lot, string? err)> MakeBid(uint id, decimal new_price, string user_login)
+    public async Task<(Lot? lot, Error err)> MakeBidAsync(uint id, decimal new_price, string user_login)
     {
         var lot = await db.lots
             .Include(l => l.user)
@@ -404,8 +442,8 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
 
         var error = ValidateBid(lot, new_price, user_login);
 
-        if (lot == null || error != null) {
-            return (lot, error);
+        if (lot == null || error != Error.None) {
+            return (null, error);
         }
 
         var bet = new Bid {
@@ -419,12 +457,12 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
         lot.leader_login = user_login;
 
         if (!await db.TrySaveChangesAsync())
-            return (lot, "Ошибка сохранения ставки.");
+            return (lot, Error.DbError);
 
-        return (await db.lots.Include(l => l.user).Include(l => l.bids.OrderByDescending(b => b.id)).FirstOrDefaultAsync(l => l.id == id), null);
+        return (await db.lots.Include(l => l.user).Include(l => l.bids.OrderByDescending(b => b.id)).FirstOrDefaultAsync(l => l.id == id), Error.None);
     }
 
-    public async Task<(Lot? lot, string? err)> CancelLastBid(uint lot_id, string user_login)
+    public async Task<(Lot? lot, Error err)> CancelLastBid(uint lot_id, string user_login)
     {
         var lot = await db.lots
             .Include(l => l.user)
@@ -432,25 +470,25 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
             .FirstOrDefaultAsync(l => l.id == lot_id);
 
         if (lot == null) {
-            return (lot, "Лот не найден.");
+            return (lot, Error.NotExists);
         }
 
         // TODO: this is not good. change
         var error = ValidateBid(lot, lot.current_price+1, user_login);
 
-        if (error != null) {
+        if (error != Error.None) {
             return (lot, error);
         }
 
         var last_2_bid = lot.bids.Take(2).ToList();
         if (last_2_bid.Count == 0) {
-            return (lot, "Ставок еще не сделано.");
+            return (lot, Error.NoBids);
         }
 
         var last_bid = last_2_bid.FirstOrDefault();
 
         if (last_bid?.user_login != user_login) {
-            return (lot, "Нелегальная операция.");
+            return (lot, Error.IllegalOperaion);
         }
 
         lot.bids.Remove(last_bid);
@@ -462,9 +500,20 @@ public class LotsModel(AuctionDbContext db, IWebHostEnvironment env)
             lot.leader_login = null;
         }
         if (!await db.TrySaveChangesAsync())
-            return (null, "Ошибка сохранения ставки.");
+            return (null, Error.DbError);
 
 
-        return (await db.lots.Include(l => l.user).Include(l => l.bids.OrderByDescending(b => b.id)).FirstOrDefaultAsync(l => l.id == lot_id), null);
+        return (await db.lots.Include(l => l.user).Include(l => l.bids.OrderByDescending(b => b.id)).FirstOrDefaultAsync(l => l.id == lot_id), Error.None);
+    }
+
+    public async Task<LotDetailsData> GetLotDetailsDataAsync(Lot lot, User? current_user)
+    {
+        var data = new LotDetailsData {
+            lot = lot,
+            images = lot.images.ToList(),
+            seller = lot.user,
+            is_owner = current_user?.login == lot.user_login,
+        };
+        return data;
     }
 }

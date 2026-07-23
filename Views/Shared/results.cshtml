@@ -1,0 +1,10 @@
+@using App.Extentions;
+@{
+    var results = ViewData.GetResults();
+}
+
+@if (results.Count > 0) {
+    @foreach (var res in results) {
+        <span class="@res.GetClass()">@res.message</span>
+    }
+}

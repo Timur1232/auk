@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using App;
+using App.Helpers;
 using App.Services;
 using App.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

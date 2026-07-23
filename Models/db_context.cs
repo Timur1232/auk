@@ -1,26 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Security.Claims;
+using App.Helpers;
 namespace App.Models;
-
-public enum ModelError {
-    None,
-    DbError,
-    NotExist,
-}
-
-public static class DeleteErrorMethod {
-    extension(ModelError err) {
-        public string GetMessage()
-        {
-            return err switch {
-                ModelError.None => "Нет ошибки.",
-                ModelError.DbError => "Ошибка записи в базу данных.",
-                ModelError.NotExist => "Записи не существует.",
-                _ => G.Unreachable<string>(nameof(ModelError)),
-            };
-        }
-    }
-}
 
 public class AuctionDbContext(DbContextOptions opt) : DbContext(opt)
 {
@@ -66,5 +48,21 @@ public class AuctionDbContext(DbContextOptions opt) : DbContext(opt)
             return false;
         }
         return true;
+    }
+
+    protected override void OnModelCreating(ModelBuilder model_builder)
+    {
+        foreach (var entity_type in model_builder.Model.GetEntityTypes()) {
+            foreach (var property in entity_type.GetProperties()) {
+                if (property.ClrType == typeof(DateTimeOffset) || property.ClrType == typeof(DateTimeOffset?)) {
+                    property.SetValueConverter(
+                        new ValueConverter<DateTimeOffset, DateTimeOffset>(
+                            v => v.ToUniversalTime(),
+                            v => v
+                        )
+                    );
+                }
+            }
+        }
     }
 }

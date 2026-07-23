@@ -10,6 +10,7 @@ public class AuthModel(AuctionDbContext db, PasswordHasher password_hasher)
         UserNotExists,
         IncorrectPassword,
         LoginExists,
+        LoginEmpty,
         EmailExists,
         PasswordConfirmNotMatch,
         DbError,
@@ -18,13 +19,14 @@ public class AuthModel(AuctionDbContext db, PasswordHasher password_hasher)
     public static string ErrorToString(Error err)
     {
         return err switch {
-            Error.None => "Нет ошибки.",
-            Error.UserNotExists => "Пользователя не существует.",
-            Error.IncorrectPassword => "Неправильный пароль.",
-            Error.LoginExists => "Логин существует.",
-            Error.EmailExists => "Почта существует.",
+            Error.None                    => "Нет ошибки.",
+            Error.UserNotExists           => "Пользователя не существует.",
+            Error.IncorrectPassword       => "Неправильный пароль.",
+            Error.LoginExists             => "Логин существует.",
+            Error.LoginEmpty              => "Логин не может быть пустым.",
+            Error.EmailExists             => "Почта существует.",
             Error.PasswordConfirmNotMatch => "Подтверждение пароля не совпадает.",
-            Error.DbError => "Пароли не совпадают.",
+            Error.DbError                 => "Пароли не совпадают.",
             _ => G.Unreachable<string>(nameof(ErrorToString)),
         };
     }
@@ -53,10 +55,10 @@ public class AuthModel(AuctionDbContext db, PasswordHasher password_hasher)
     public async Task<List<Error>> ValidateRegisterForm(User.RegisterRequest register_req)
     {
         var errors = new List<Error>();
-        // if (register_req.login == null) {
-        //     errors.Add("Логин не может быть пустым.");
-        //     return errors;
-        // }
+        if (register_req.login == null) {
+            errors.Add(Error.LoginEmpty);
+            return errors;
+        }
         if (await db.GetUserByLogin(register_req.login) != null) {
             errors.Add(Error.LoginExists);
         }
