@@ -24,3 +24,11 @@ function format_file_size(bytes) {
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
     return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
 }
+
+function clear_form(reset_button) {
+    const form = ultra.from_dom(reset_button.closest('form'));
+    const inputs = form.$by_selector_all('input');
+    for (const i of inputs) {
+        i.value = '';
+    }
+}

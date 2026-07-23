@@ -65,14 +65,19 @@ public class UserLotCard
 
 public class AdminPageData
 {
-    public List<Tag> tags { get; set; } = new();
-    public string? search { get; set; }
-    public bool success { get; set; }
+    public List<Tag> tags = new();
+    public string? search;
+    public bool success;
 }
 
 public class TagEditFormData
 {
-    public uint tag_id { get; set; }
-    public string name {get; set;} = null!;
-    public bool success {get; set;}
+    public uint tag_id;
+    public string name = null!;
+    public bool success;
 }
+
+public record ChangePasswordData(
+    string? old_password,
+    string? new_password
+);

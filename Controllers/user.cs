@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using App.Models;
+using App.Helpers;
 using App.Attributes;
 using App.Extentions;
 using App.Services;
@@ -64,29 +65,47 @@ public class UserController(
     private LotsModel lots_model = new(db, env);
 
     [HttpGet("password_change")]
-    public async Task<IActionResult> ChangePasswordForm(string user_login)
+    public async Task<IActionResult> ChangePasswordForm()
     {
         return View("change_password_form");
     }
 
     [HttpPatch("password_change")]
-    public async Task<IActionResult> ChangePassword(string user_login, [FromForm] string old_password, [FromForm] string new_password)
+    public async Task<IActionResult> ChangePassword(string user_login, [FromForm] ChangePasswordData req)
     {
         var user = HttpContext.GetUser()!;
         if (user.login != user_login) {
             return Unauthorized();
         }
 
-        if (ph.Varify(old_password, user.password_hash)) {
-            return View("change_password_form", "Неправильный пароль.");
+        if (string.IsNullOrEmpty(req.old_password)) {
+            ViewData.SetResults(ViewMessage.Error("Необходимо ввести старый пароль."));
+            return View("change_password_form", req);
+        }
+        if (string.IsNullOrEmpty(req.new_password)) {
+            ViewData.SetResults(ViewMessage.Error("Необходимо ввести новый пароль."));
+            return View("change_password_form", req);
         }
 
-        var new_hash = ph.Hash(new_password);
+        if (req.new_password == req.old_password) {
+            ViewData.SetResults(ViewMessage.Error("Старый и новый пароли не могут совпадать."));
+            return View("change_password_form", req);
+        }
+
+        if (!ph.Varify(req.old_password, user.password_hash)) {
+            ViewData.SetResults(ViewMessage.Error("Неправильный пароль."));
+            return View("change_password_form", req);
+        }
+
+        var new_hash = ph.Hash(req.new_password);
         user.password_hash = new_hash;
         db.Update(user);
-        await db.SaveChangesAsync();
+        if (!await db.TrySaveChangesAsync()) {
+            ViewData.SetResults(ViewMessage.Error("Ошибка сохранения. Попробуйте снова."));
+            return View("change_password_form", req);
+        }
 
-        return Redirect("/user");
+        return View("change_password_result");
     }
 
     [HttpGet("bets-list")]

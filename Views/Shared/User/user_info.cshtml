@@ -1,7 +1,7 @@
 @using App.Extentions;
 @model App.Models.UserInfoData;
 @{
-    var user = ViewData.GetUser()!;
+    var user = ViewData.GetUser();
     var this_user = user != null && user.login == Model.user_login;
 }
 
@@ -14,7 +14,8 @@
     </div>
 
     @if (this_user) {
-        <div><a href="/lots/my/create" class="button">Создать лот</a></div>
+        <a href="/user/@user!.login/password_change" class="button">Изменить пароль</a>
+        <a href="/lots/my/create" class="button">Создать лот</a>
     }
 
     <div class="user-tabs">
